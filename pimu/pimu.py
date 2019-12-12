@@ -16,6 +16,7 @@ PWR_MGMT_1 = 0x6B
 SMPLRT_DIV = 0x19
 CONFIG = 0x1A
 GYRO_CONFIG = 0x1B
+ACCEL_CONFIG = 0x1C
 INT_ENABLE = 0x38
 ACCEL_XOUT_H = 0x3B
 ACCEL_XOUT_L = 0x3C
@@ -92,7 +93,15 @@ def mpu_init(bus, device_address):
     # Bits 3-4 set FS_SEL, which selects the full scale range of the gyroscope
     # outputs. The full scale range is the maximum angular velocity that the
     # gyro can read. FS_SEL = 3 sets +-2000 degree/s.
-    bus.write_byte_data(device_address, GYRO_CONFIG, 24)
+    bus.write_byte_data(device_address, GYRO_CONFIG, 0)
+
+    # Accelerometer Configuration.
+    # This register is used to trigger accelerometer self test and configure
+    # the accelerometer full scale range. This register also configures
+    # the Digital High Pass Filter (DHPF)
+    # Bits 3-4 set AFS_SEL, which selects the full scale range of
+    # the accelerometer outputs. AFS_SEL = 0 sets +-2g.
+    bus.write_byte_data(device_address, ACCEL_CONFIG, 0)
 
     # Interrupt Enable.
     # This register enables interrupt generation by interrupt sources.
@@ -150,7 +159,7 @@ def _read_raw_gyroscope_data(bus, device_address):
 
 
 def read_gyroscope_data(bus, device_address):
-    return tuple(map(lambda x: x / GYRO_LSB_SENSITIVITY_2000deg,
+    return tuple(map(lambda x: x / GYRO_LSB_SENSITIVITY_250deg,
                      _read_raw_gyroscope_data(bus, device_address)))
 
 
