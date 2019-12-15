@@ -39,9 +39,9 @@ ACCEL_LSB_SENSITIVITY_2g = 16384
 GYRO_LSB_SENSITIVITY_250deg = 131
 GYRO_LSB_SENSITIVITY_2000deg = 16.4
 
-RATE = 10
+RATE = 50
 NUMBER_CALIBRATION_SAMPLES = 100
-LOGGING_LEVEL = logging.WARNING
+LOGGING_LEVEL = logging.INFO
 
 _sleep_time = 1. / RATE
 
@@ -170,7 +170,7 @@ def read_gyroscope_data(bus, device_address):
 def calibrate(bus, device_address):
     do_calibration = input('Press Y to calibrate ').lower() == 'y'
     if not do_calibration:
-        return
+        return 0, 0, 0
 
     input('Place the IMU on a flat surface and press '
           'any key when you are ready. ')
