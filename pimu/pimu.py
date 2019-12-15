@@ -40,7 +40,7 @@ GYRO_LSB_SENSITIVITY_250deg = 131
 GYRO_LSB_SENSITIVITY_2000deg = 16.4
 
 RATE = 50
-NUMBER_CALIBRATION_SAMPLES = 100
+NUMBER_CALIBRATION_SAMPLES = 1000
 LOGGING_LEVEL = logging.INFO
 
 _sleep_time = 1. / RATE
@@ -177,13 +177,13 @@ def calibrate(bus, device_address):
 
     logger.info('Begin calibration')
 
-    calibration_samples = np.zeros((NUMBER_CALIBRATION_SAMPLES, 3))
+    calibration_samples = np.zeros((NUMBER_CALIBRATION_SAMPLES, 6))
     sample_idx = 0
     while sample_idx < NUMBER_CALIBRATION_SAMPLES:
-        # acc_x, acc_y, acc_z = read_accelerometer_data(bus, device_address)
-        # temp_deg = read_temperature_data(bus, device_address)
+        acc_x, acc_y, acc_z = read_accelerometer_data(bus, device_address)
+        gyro_x, gyro_y, gyro_z = read_gyroscope_data(bus, device_address)
         calibration_samples[sample_idx] = \
-            np.array(read_gyroscope_data(bus, device_address))
+            np.array([acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z])
         sample_idx += 1
 
     calibration = np.mean(calibration_samples, axis=0)
@@ -203,7 +203,10 @@ def main():
     mpu_init(bus, device_address)
 
     calib_correction = calibrate(bus, device_address)
-    calib_gyro_x, calib_gyro_y, calib_gyro_z = calib_correction
+    acc_x_err, acc_y_err, acc_z_err, gyro_x_err, gyro_y_err, gyro_z_err = \
+        calib_correction
+
+    input('Enter any key to start ')
 
     logger.info('Begin data reading')
     while True:
@@ -211,11 +214,15 @@ def main():
         temp_deg = read_temperature_data(bus, device_address)
         gyro_x, gyro_y, gyro_z = read_gyroscope_data(bus, device_address)
 
-        logger.info('Accelerometer: {}'.format((acc_x, acc_y, acc_z)))
-        logger.info('Temperature: {}'.format(temp_deg))
-        logger.info('Gyroscope: {}'.format((gyro_x - calib_gyro_x,
-                                            gyro_y - calib_gyro_y,
-                                            gyro_z - calib_gyro_z)))
+        logger.info('Accelerometer: '
+                    '{: 6.3}, {: 6.3}, {: 6.3}'.format(acc_x - acc_x_err,
+                                                       acc_y - acc_y_err,
+                                                       acc_z - acc_z_err))
+        logger.info('Temperature: {: 6.3}'.format(temp_deg))
+        logger.info('Gyroscope: '
+                    '{: 6.2}, {: 6.2}, {: 6.2}'.format(gyro_x - gyro_x_err,
+                                                       gyro_y - gyro_y_err,
+                                                       gyro_z - gyro_z_err))
         logger.info('')
 
         sleep(_sleep_time)
