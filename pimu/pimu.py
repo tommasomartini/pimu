@@ -8,6 +8,7 @@ Registers, addresses and instructions documentation at:
 """
 import logging
 import smbus
+import numpy as np
 from time import sleep
 
 # MPU6050 registers and their address.
@@ -39,7 +40,10 @@ GYRO_LSB_SENSITIVITY_250deg = 131
 GYRO_LSB_SENSITIVITY_2000deg = 16.4
 
 RATE = 10
-LOGGING_LEVEL = logging.INFO
+NUMBER_CALIBRATION_SAMPLES = 100
+LOGGING_LEVEL = logging.WARNING
+
+_sleep_time = 1. / RATE
 
 logging.basicConfig(level=LOGGING_LEVEL, format='[%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
@@ -163,6 +167,32 @@ def read_gyroscope_data(bus, device_address):
                      _read_raw_gyroscope_data(bus, device_address)))
 
 
+def calibrate(bus, device_address):
+    do_calibration = input('Press Y to calibrate ').lower() == 'y'
+    if not do_calibration:
+        return
+
+    input('Place the IMU on a flat surface and press '
+          'any key when you are ready. ')
+
+    logger.info('Begin calibration')
+
+    calibration_samples = np.zeros(NUMBER_CALIBRATION_SAMPLES, 3)
+    sample_idx = 0
+    while sample_idx < NUMBER_CALIBRATION_SAMPLES:
+        # acc_x, acc_y, acc_z = read_accelerometer_data(bus, device_address)
+        # temp_deg = read_temperature_data(bus, device_address)
+        calibration_samples[sample_idx] = \
+            np.array(read_gyroscope_data(bus, device_address))
+        sample_idx += 1
+
+    calibration = np.mean(calibration_samples, axis=0)
+
+    print('Calibration complete')
+
+    return tuple(calibration)
+
+
 def main():
     logger.info('Start up')
 
@@ -172,8 +202,10 @@ def main():
     device_address = MPU6050_ADDRESS
     mpu_init(bus, device_address)
 
+    calib_correction = calibrate(bus, device_address)
+    calib_gyro_x, calib_gyro_y, calib_gyro_z = calib_correction
+
     logger.info('Begin data reading')
-    sleep_time = 1. / RATE
     while True:
         acc_x, acc_y, acc_z = read_accelerometer_data(bus, device_address)
         temp_deg = read_temperature_data(bus, device_address)
@@ -181,10 +213,12 @@ def main():
 
         logger.info('Accelerometer: {}'.format((acc_x, acc_y, acc_z)))
         logger.info('Temperature: {}'.format(temp_deg))
-        logger.info('Gyroscope: {}'.format((gyro_x, gyro_y, gyro_z)))
+        logger.info('Gyroscope: {}'.format((gyro_x - calib_gyro_x,
+                                            gyro_y - calib_gyro_y,
+                                            gyro_z - calib_gyro_z)))
         logger.info('')
 
-        sleep(sleep_time)
+        sleep(_sleep_time)
 
 
 if __name__ == '__main__':
