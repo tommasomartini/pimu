@@ -177,7 +177,7 @@ def calibrate(bus, device_address):
 
     logger.info('Begin calibration')
 
-    calibration_samples = np.zeros(NUMBER_CALIBRATION_SAMPLES, 3)
+    calibration_samples = np.zeros((NUMBER_CALIBRATION_SAMPLES, 3))
     sample_idx = 0
     while sample_idx < NUMBER_CALIBRATION_SAMPLES:
         # acc_x, acc_y, acc_z = read_accelerometer_data(bus, device_address)
