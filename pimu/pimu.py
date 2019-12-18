@@ -8,38 +8,18 @@ Registers, addresses and instructions documentation at:
 """
 import logging
 import smbus
-import numpy as np
 from time import sleep
 
-# MPU6050 registers and their address.
-MPU6050_ADDRESS = 0x68  # could also be 0x69
-PWR_MGMT_1 = 0x6B
-SMPLRT_DIV = 0x19
-CONFIG = 0x1A
-GYRO_CONFIG = 0x1B
-ACCEL_CONFIG = 0x1C
-INT_ENABLE = 0x38
-ACCEL_XOUT_H = 0x3B
-ACCEL_XOUT_L = 0x3C
-ACCEL_YOUT_H = 0x3D
-ACCEL_YOUT_L = 0x3E
-ACCEL_ZOUT_H = 0x3F
-ACCEL_ZOUT_L = 0x40
-TEMP_OUT_H = 0x41
-TEMP_OUT_L = 0x42
-GYRO_XOUT_H = 0x43
-GYRO_XOUT_L = 0x44
-GYRO_YOUT_H = 0x45
-GYRO_YOUT_L = 0x46
-GYRO_ZOUT_H = 0x47
-GYRO_ZOUT_L = 0x48
+import numpy as np
+
+import pimu.registers as regs
 
 # Constants.
 ACCEL_LSB_SENSITIVITY_2g = 16384
 GYRO_LSB_SENSITIVITY_250deg = 131
 GYRO_LSB_SENSITIVITY_2000deg = 16.4
 
-RATE = 50
+RATE = 1
 NUMBER_CALIBRATION_SAMPLES = 1000
 LOGGING_LEVEL = logging.INFO
 
@@ -58,7 +38,7 @@ def mpu_init(bus, device_address):
     #   Sample Rate = Gyroscope Output Rate / (1 + SMPLRT_DIV)
     # where Gyroscope Output Rate = 8kHz when the DLPF is disabled
     # (DLPF_CFG = 0 or 7), and 1kHz when the DLPF is enabled (see Register 26).
-    bus.write_byte_data(device_address, SMPLRT_DIV, 7)
+    bus.write_byte_data(device_address, regs.SMPLRT_DIV, 7)
 
     # Power Management 1.
     # This register allows the user to configure the power mode
@@ -72,7 +52,7 @@ def mpu_init(bus, device_address):
     # CLKSEL 6 and 7 are other things.
     # Bits 0-2 configure CLKSEL. Bits 3-7 configure other things.
     # Here we take the x gyroscope as clock reference.
-    bus.write_byte_data(device_address, PWR_MGMT_1, 1)
+    bus.write_byte_data(device_address, regs.PWR_MGMT_1, 1)
 
     # Configuration.
     # This register configures the external Frame Synchronization (FSYNC)
@@ -88,7 +68,7 @@ def mpu_init(bus, device_address):
     # * Gyroscope Fs = 8 kHz (max)
     # Bandwidth is the vibration the accelerometer can detect. It is filter by
     # a filter with bandwidth set by DLPF_CFG.
-    bus.write_byte_data(device_address, CONFIG, 0)
+    bus.write_byte_data(device_address, regs.CONFIG, 0)
 
     # Gyroscope Configuration.
     # This register is used to trigger gyroscope self-test and configure
@@ -97,7 +77,7 @@ def mpu_init(bus, device_address):
     # Bits 3-4 set FS_SEL, which selects the full scale range of the gyroscope
     # outputs. The full scale range is the maximum angular velocity that the
     # gyro can read. FS_SEL = 3 sets +-2000 degree/s.
-    bus.write_byte_data(device_address, GYRO_CONFIG, 0)
+    bus.write_byte_data(device_address, regs.GYRO_CONFIG, 0)
 
     # Accelerometer Configuration.
     # This register is used to trigger accelerometer self test and configure
@@ -105,7 +85,7 @@ def mpu_init(bus, device_address):
     # the Digital High Pass Filter (DHPF)
     # Bits 3-4 set AFS_SEL, which selects the full scale range of
     # the accelerometer outputs. AFS_SEL = 0 sets +-2g.
-    bus.write_byte_data(device_address, ACCEL_CONFIG, 0)
+    bus.write_byte_data(device_address, regs.ACCEL_CONFIG, 0)
 
     # Interrupt Enable.
     # This register enables interrupt generation by interrupt sources.
@@ -115,7 +95,7 @@ def mpu_init(bus, device_address):
     # To my understanding, when we write data to all sensor registers, we set
     # bit 1 of register INT_STATUS (3A) to 1. Such bit is set back to 0 after
     # a read operation.
-    bus.write_byte_data(device_address, INT_ENABLE, 1)
+    bus.write_byte_data(device_address, regs.INT_ENABLE, 1)
 
     logger.info('IMU setup complete')
 
@@ -130,9 +110,9 @@ def _read_double_register_data(bus, device_address, address_high, address_low):
 
 def _read_raw_accelerometer_data(bus, device_address):
     raw_data = (
-        _read_double_register_data(bus, device_address, ACCEL_XOUT_H, ACCEL_XOUT_L),
-        _read_double_register_data(bus, device_address, ACCEL_YOUT_H, ACCEL_YOUT_L),
-        _read_double_register_data(bus, device_address, ACCEL_ZOUT_H, ACCEL_ZOUT_L),
+        _read_double_register_data(bus, device_address, regs.ACCEL_XOUT_H, regs.ACCEL_XOUT_L),
+        _read_double_register_data(bus, device_address, regs.ACCEL_YOUT_H, regs.ACCEL_YOUT_L),
+        _read_double_register_data(bus, device_address, regs.ACCEL_ZOUT_H, regs.ACCEL_ZOUT_L),
     )
     return raw_data
 
@@ -143,7 +123,7 @@ def read_accelerometer_data(bus, device_address):
 
 
 def _read_raw_temperature_data(bus, device_address):
-    raw_data = _read_double_register_data(bus, device_address, TEMP_OUT_H, TEMP_OUT_L)
+    raw_data = _read_double_register_data(bus, device_address, regs.TEMP_OUT_H, regs.TEMP_OUT_L)
     return raw_data
 
 
@@ -155,9 +135,9 @@ def read_temperature_data(bus, device_address):
 
 def _read_raw_gyroscope_data(bus, device_address):
     raw_data = (
-        _read_double_register_data(bus, device_address, GYRO_XOUT_H, GYRO_XOUT_L),
-        _read_double_register_data(bus, device_address, GYRO_YOUT_H, GYRO_YOUT_L),
-        _read_double_register_data(bus, device_address, GYRO_ZOUT_H, GYRO_ZOUT_L),
+        _read_double_register_data(bus, device_address, regs.GYRO_XOUT_H, regs.GYRO_XOUT_L),
+        _read_double_register_data(bus, device_address, regs.GYRO_YOUT_H, regs.GYRO_YOUT_L),
+        _read_double_register_data(bus, device_address, regs.GYRO_ZOUT_H, regs.GYRO_ZOUT_L),
     )
     return raw_data
 
@@ -170,7 +150,7 @@ def read_gyroscope_data(bus, device_address):
 def calibrate(bus, device_address):
     do_calibration = input('Press Y to calibrate ').lower() == 'y'
     if not do_calibration:
-        return 0, 0, 0
+        return 0, 0, 0, 0, 0, 0
 
     input('Place the IMU on a flat surface and press '
           'any key when you are ready. ')
@@ -199,7 +179,7 @@ def main():
     # The argument is 0 for older version boards.
     bus = smbus.SMBus(1)
 
-    device_address = MPU6050_ADDRESS
+    device_address = regs.MPU6050_ADDRESS
     mpu_init(bus, device_address)
 
     calib_correction = calibrate(bus, device_address)
