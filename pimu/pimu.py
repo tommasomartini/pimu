@@ -41,7 +41,7 @@ def _read_raw_accelerometer_data(bus, device_address):
 
 def read_accelerometer_data(bus, device_address, afs_sel):
     sensitivity = const.ACCEL_SENSITIVITY[afs_sel]
-    data = tuple(map(lambda x: x / sensitivity,
+    data = tuple(map(lambda x: - x / sensitivity,
                      _read_raw_accelerometer_data(bus, device_address)))
     return data
 
