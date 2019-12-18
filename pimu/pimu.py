@@ -12,12 +12,8 @@ from time import sleep
 
 import numpy as np
 
+import pimu.constants as const
 import pimu.registers as regs
-
-# Constants.
-ACCEL_LSB_SENSITIVITY_2g = 16384
-GYRO_LSB_SENSITIVITY_250deg = 131
-GYRO_LSB_SENSITIVITY_2000deg = 16.4
 
 RATE = 1
 NUMBER_CALIBRATION_SAMPLES = 1000
@@ -118,7 +114,7 @@ def _read_raw_accelerometer_data(bus, device_address):
 
 
 def read_accelerometer_data(bus, device_address):
-    return tuple(map(lambda x: x / ACCEL_LSB_SENSITIVITY_2g,
+    return tuple(map(lambda x: x / const.ACCEL_LSB_SENSITIVITY_2g,
                      _read_raw_accelerometer_data(bus, device_address)))
 
 
@@ -143,7 +139,7 @@ def _read_raw_gyroscope_data(bus, device_address):
 
 
 def read_gyroscope_data(bus, device_address):
-    return tuple(map(lambda x: x / GYRO_LSB_SENSITIVITY_250deg,
+    return tuple(map(lambda x: x / const.GYRO_LSB_SENSITIVITY_250deg,
                      _read_raw_gyroscope_data(bus, device_address)))
 
 
