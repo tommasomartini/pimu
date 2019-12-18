@@ -1,15 +1,18 @@
 """This module contains the functions necessary to set up the MPU6050 IMU.
 """
-
 import logging
-
+import pimu.constants as const
 import pimu.registers as regs
 
 logger = logging.getLogger(__name__)
 
 
-def mpu_init(bus, device_address):
+def mpu_init(bus, device_address, config):
     logger.info('Starting IMU setup')
+
+    # Extracts the parameters from the config dict.
+    fs_sel = const.FS_SEL[config['fs_sel']]
+    afs_sel = const.AFS_SEL[config['afs_sel']]
 
     # Sample Rate Divider.
     # Specifies the divider from the gyroscope output rate used to generate
@@ -56,7 +59,7 @@ def mpu_init(bus, device_address):
     # Bits 3-4 set FS_SEL, which selects the full scale range of the gyroscope
     # outputs. The full scale range is the maximum angular velocity that the
     # gyro can read. FS_SEL = 3 sets +-2000 degree/s.
-    bus.write_byte_data(device_address, regs.GYRO_CONFIG, 0)
+    bus.write_byte_data(device_address, regs.GYRO_CONFIG, fs_sel)
 
     # Accelerometer Configuration.
     # This register is used to trigger accelerometer self test and configure
@@ -64,7 +67,7 @@ def mpu_init(bus, device_address):
     # the Digital High Pass Filter (DHPF)
     # Bits 3-4 set AFS_SEL, which selects the full scale range of
     # the accelerometer outputs. AFS_SEL = 0 sets +-2g.
-    bus.write_byte_data(device_address, regs.ACCEL_CONFIG, 0)
+    bus.write_byte_data(device_address, regs.ACCEL_CONFIG, afs_sel)
 
     # Interrupt Enable.
     # This register enables interrupt generation by interrupt sources.
