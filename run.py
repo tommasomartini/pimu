@@ -37,8 +37,6 @@ def _log_gyroscope(x, y, z):
 
 def main():
     logger.info('Start up')
-    _log_accelerometer(1., 2., 3.)
-    return
 
     # The argument is 0 for older version boards.
     bus = smbus.SMBus(1)
