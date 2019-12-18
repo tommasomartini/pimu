@@ -75,7 +75,7 @@ def main():
         if CALIBRATE:
             acc_x -= err_acc_x
             acc_y -= err_acc_y
-            acc_z -= err_acc_z - 1
+            acc_z -= (err_acc_z + 1)
 
             gyro_x -= err_gyro_x
             gyro_y -= err_gyro_y
