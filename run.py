@@ -3,6 +3,7 @@ import smbus
 from time import sleep
 
 import pimu.init as init
+import pimu.calibration as calib
 import pimu.pimu as pimu
 import pimu.registers as regs
 
@@ -10,6 +11,8 @@ RATE = 1    # Hz
 LOGGING_LEVEL = logging.INFO
 FS_SEL = '250'
 AFS_SEL = '2g'
+CALIBRATE = True
+NUM_CALIBRATION_SAMPLES = 5 * RATE  # calibration should take 5s
 
 logging.basicConfig(level=LOGGING_LEVEL, format='[%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
@@ -49,6 +52,17 @@ def main():
     }
     init.mpu_init(bus, device_address, config)
 
+    if CALIBRATE:
+        calib_values = calib.calibrate(
+            bus=bus,
+            device_address=device_address,
+            num_calibration_samples=NUM_CALIBRATION_SAMPLES,
+            afs_sel=AFS_SEL,
+            fs_sel=FS_SEL,
+        )
+        (err_acc_x, err_acc_y, err_acc_z,
+         err_gyro_x, err_gyro_y, err_gyro_z) = calib_values
+
     sleep_time = 1. / RATE
     logger.info('Begin data reading')
     while True:
@@ -57,6 +71,15 @@ def main():
         temp_deg = pimu.read_temperature_data(bus, device_address)
         gyro_x, gyro_y, gyro_z = \
             pimu.read_gyroscope_data(bus, device_address, fs_sel=FS_SEL)
+
+        if CALIBRATE:
+            acc_x -= err_acc_x
+            acc_y -= err_acc_y
+            acc_z -= err_acc_z - 1
+
+            gyro_x -= err_gyro_x
+            gyro_y -= err_gyro_y
+            gyro_z -= err_gyro_z
 
         _log_accelerometer(acc_x, acc_y, acc_z)
         _log_temperature(temp_deg)
