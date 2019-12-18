@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def _log_accelerometer(x, y, z):
-    value_format = '{: 6.3}'
+    value_format = '{: 6.3f}'
     values_format = ', '.join([value_format] * 3)
     unformatted_string = 'Accelerometer: ' + values_format
     formatted_string = unformatted_string.format(x, y, z)
@@ -24,11 +24,11 @@ def _log_accelerometer(x, y, z):
 
 
 def _log_temperature(val):
-    logger.info('Temperature: {: 6.3}'.format(val))
+    logger.info('Temperature: {: 6.3f}'.format(val))
 
 
 def _log_gyroscope(x, y, z):
-    value_format = '{: 6.2}'
+    value_format = '{: 7.3f}'
     values_format = ', '.join([value_format] * 3)
     unformatted_string = 'Gyroscope: ' + values_format
     formatted_string = unformatted_string.format(x, y, z)
