@@ -1,4 +1,5 @@
 import itertools as it
+import time
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,9 +11,14 @@ import pimu.constants as const
 
 
 def _fake_data_generator():
-    num_samples = 100
+    rate = 60
+    num_samples = 500
+    max_deg = 1
+    np.random.seed(0)
     for idx in range(num_samples):
-        yield idx
+        time.sleep(1. / rate)
+        yaw_rad, roll_rad, pitch_rad = np.deg2rad(max_deg * np.random.rand(3))
+        yield yaw_rad, roll_rad, pitch_rad
 
 
 def _rotation_matrix(yaw_rad, roll_rad, pitch_rad):
@@ -162,31 +168,20 @@ class Board:
 
 
 def main():
-
     board = Board()
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection=Axes3D.name)
-
-    board.rotate(yaw_rad=np.deg2rad(90),
-                 roll_rad=np.deg2rad(10),
-                 pitch_rad=np.deg2rad(30))
-    board.rotate(yaw_rad=0,
-                 roll_rad=0,
-                 pitch_rad=np.deg2rad(-30))
-    board.rotate(yaw_rad=0,
-                 roll_rad=np.deg2rad(-10),
-                 pitch_rad=0)
-    board.rotate(yaw_rad=np.deg2rad(-90),
-                 pitch_rad=0,
-                 roll_rad=0)
-    board.plot(ax)
-
     ax.set_xlabel('X axis')
     ax.set_ylabel('Y axis')
     ax.set_zlabel('Z axis')
 
-    plt.show()
+    for yaw, roll, pitch in _fake_data_generator():
+        ax.clear()
+        board.rotate(yaw_rad=yaw, roll_rad=roll, pitch_rad=pitch)
+        board.plot(ax)
+        plt.pause(1e-5)
+
     plt.close()
 
 
