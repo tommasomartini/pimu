@@ -43,3 +43,8 @@ GYRO_SENSITIVITY = {
     '1000': 32.8,   # 2^13 / 250 = 32.768
     '2000': 16.4,   # 2^12 / 250 = 16.384
 }
+
+# Dimensions of the IMU board.
+BOARD_WIDTH_mm = 16.4   # along X axis
+BOARD_LENGTH_mm = 21.2  # along Y axis
+BOARD_HEIGHT_mm = 3.3   # along Z axis
