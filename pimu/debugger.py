@@ -3,8 +3,10 @@ import time
 
 import matplotlib.pyplot as plt
 import numpy as np
+import socket
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
+import json
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 import pimu.constants as const
@@ -176,7 +178,19 @@ def main():
     ax.set_ylabel('Y axis')
     ax.set_zlabel('Z axis')
 
-    for yaw, roll, pitch in _fake_data_generator():
+    UDP_IP = "127.0.0.1"
+    UDP_PORT = 5005
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind((UDP_IP, UDP_PORT))
+
+    while True:
+        data, addr = sock.recvfrom(1024)  # buffer size is 1024 bytes
+
+        data_dict = json.loads(data.decode('utf-8'))
+        yaw, roll, pitch = map(float, [data_dict['yaw'],
+                                       data_dict['roll'],
+                                       data_dict['pitch']])
+
         ax.clear()
         board.rotate(yaw_rad=yaw, roll_rad=roll, pitch_rad=pitch)
         board.plot(ax)
