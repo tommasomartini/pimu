@@ -2,7 +2,7 @@ import logging
 
 import numpy as np
 
-import pimu.pimu as pimu
+import pimu.imu as pimu
 
 logger = logging.getLogger(__name__)
 

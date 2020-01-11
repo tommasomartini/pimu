@@ -1,6 +1,7 @@
 """This module contains the functions necessary to set up the MPU6050 IMU.
 """
 import logging
+
 import pimu.constants as const
 import pimu.registers as regs
 

@@ -2,9 +2,9 @@ import logging
 import smbus
 from time import sleep
 
-import pimu.init as init
 import pimu.calibration as calib
-import pimu.pimu as pimu
+import pimu.imu as pimu
+import pimu.init as init
 import pimu.registers as regs
 
 RATE = 1    # Hz
