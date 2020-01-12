@@ -44,7 +44,7 @@ def _log_gyroscope(x, y, z):
 
 
 def _accelerometer_data_to_taitbryan(acc_x, acc_y, acc_z):
-    gravity_vec = np.array([acc_x, 0, acc_z])
+    gravity_vec = np.array([acc_x, acc_y, acc_z])
 
     # The Z axis of the world coordinate system.
     reference_z = - gravity_vec / np.linalg.norm(gravity_vec)
@@ -68,30 +68,10 @@ def _accelerometer_data_to_taitbryan(acc_x, acc_y, acc_z):
 def main():
     logger.info('Start up')
 
-    UDP_IP = '127.0.0.1'
+    UDP_IP = '192.168.1.84'
     UDP_PORT = 5005
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-    ######################################à
-
-    sleep_time = 1. / RATE
-    logger.info('Begin data reading')
-    while True:
-        acc_x, acc_y, acc_z = np.deg2rad(np.random.rand(3) / 10000)
-        yaw, roll, pitch = _accelerometer_data_to_taitbryan(acc_x, acc_y, acc_z)
-        msg = json.dumps({
-            'yaw': float(yaw),
-            'roll': float(roll),
-            'pitch': float(pitch),
-        })
-        sock.sendto(bytes(msg, 'utf-8'), (UDP_IP, UDP_PORT))
-
-        sleep(sleep_time)
-
-    return
-
-    #####################################
 
     # The argument is 0 for older version boards.
     bus = smbus.SMBus(1)
