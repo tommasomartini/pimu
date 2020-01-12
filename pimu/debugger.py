@@ -1,15 +1,16 @@
 import itertools as it
+import json
+import socket
 import time
 
 import matplotlib.pyplot as plt
 import numpy as np
-import socket
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
-import json
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 import pimu.constants as const
+import pimu.geometry as geom
 
 
 def _fake_data_generator():
@@ -21,37 +22,6 @@ def _fake_data_generator():
         time.sleep(1. / rate)
         yaw_rad, roll_rad, pitch_rad = np.deg2rad(max_deg * np.random.rand(3))
         yield yaw_rad, roll_rad, pitch_rad
-
-
-def _rotation_matrix(yaw_rad, roll_rad, pitch_rad):
-    """Builds and returns a rotation matrix.
-
-    The rotation follows one of the following two (equivalent) conventions:
-    * intrinsic rotations: z - y'- x" (yaw - roll - pitch)
-    * extrinsic rotations: x - y - z
-
-    Args:
-        yaw_rad (float): Rotation around the Z axis in radians.
-        roll_rad (float): Rotation around the Y axis in radians.
-        pitch_rad (float): Rotation around the X axis in radians.
-    """
-    yaw_matrix = np.array([
-        [np.cos(yaw_rad), -np.sin(yaw_rad), 0],
-        [np.sin(yaw_rad), np.cos(yaw_rad), 0],
-        [0, 0, 1],
-    ])
-    roll_matrix = np.array([
-        [np.cos(roll_rad), 0, np.sin(roll_rad)],
-        [0, 1, 0],
-        [-np.sin(roll_rad), 0, np.cos(roll_rad)],
-    ])
-    pitch_matrix = np.array([
-        [1, 0, 0],
-        [0, np.cos(pitch_rad), -np.sin(pitch_rad)],
-        [0, np.sin(pitch_rad), np.cos(pitch_rad)],
-    ])
-    rotation_matrix = yaw_matrix @ roll_matrix @ pitch_matrix
-    return rotation_matrix
 
 
 class Board:
@@ -107,9 +77,9 @@ class Board:
         self._pitch_rad += pitch_rad
 
         # Build the rotation matrix.
-        rotation_matrix = _rotation_matrix(yaw_rad=self._yaw_rad,
-                                           roll_rad=self._roll_rad,
-                                           pitch_rad=self._pitch_rad)
+        rotation_matrix = geom.build_rotation_matrix(yaw_rad=self._yaw_rad,
+                                                     roll_rad=self._roll_rad,
+                                                     pitch_rad=self._pitch_rad)
 
         self._vertices = rotation_matrix @ self._init_vertices
         self._board_axes = rotation_matrix @ self._init_board_axes
