@@ -79,7 +79,7 @@ def tait_bryan_angles_from_rotation_matrix(rotation_matrix):
 
     R31 = rotation_matrix[2, 0]
 
-    if _almost_equal(R31,- 1):
+    if _almost_equal(R31, - 1):
         roll = _PI / 2
         yaw = 0
 
