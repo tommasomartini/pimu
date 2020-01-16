@@ -72,20 +72,21 @@ def build_rotation_matrix(yaw_rad, pitch_rad, roll_rad):
 
 
 def tait_bryan_angles_from_rotation_matrix(rotation_matrix):
-    """Returns a tuple of Tait-Bryan angles in radians (yaw, roll, pitch)
+    """Returns a tuple of Tait-Bryan angles in radians (yaw, pitch, roll)
     that generated the provided rotation matrix.
 
     See:
         https://www.gregslabaugh.net/publications/euler.pdf
 
     Note:
-        Different Tait-Bryan angles may generate the same rotation matrix.
+        Different Tait-Bryan angles may generate the same rotation matrix, due
+        to the Gimbal Lock effect.
 
     Args:
         rotation_matrix (:obj:`numpy.array`): Array with shape (3, 3).
 
     Returns:
-        A tuple of Tait-Bryan angles in radians (yaw, roll, pitch).
+        A tuple of Tait-Bryan angles in radians (yaw, pitch, roll).
 
     Raises:
         ValueError: Invalid rotation matrix shape.
@@ -98,24 +99,24 @@ def tait_bryan_angles_from_rotation_matrix(rotation_matrix):
     R31 = rotation_matrix[2, 0]
 
     if _almost_equal(R31, - 1):
-        roll = _PI / 2
+        pitch = _PI / 2
         yaw = 0
 
         R12 = rotation_matrix[0, 1]
         R13 = rotation_matrix[0, 2]
-        pitch = np.arctan2(R12, R13)
+        roll = np.arctan2(R12, R13)
 
-        return yaw, roll, pitch
+        return yaw, pitch, roll
 
     if _almost_equal(R31, 1):
-        roll = - _PI / 2
+        pitch = - _PI / 2
         yaw = 0
 
         R12 = rotation_matrix[0, 1]
         R13 = rotation_matrix[0, 2]
-        pitch = np.arctan2(-R12, -R13)
+        roll = np.arctan2(-R12, -R13)
 
-        return yaw, roll, pitch
+        return yaw, pitch, roll
 
     R11 = rotation_matrix[0, 0]
     R21 = rotation_matrix[1, 0]
@@ -123,8 +124,8 @@ def tait_bryan_angles_from_rotation_matrix(rotation_matrix):
     R32 = rotation_matrix[2, 1]
     R33 = rotation_matrix[2, 2]
 
-    roll = np.arcsin(-R31)
-    pitch = np.arctan2(R32 / np.cos(roll), R33 / np.cos(roll))
-    yaw = np.arctan2(R21 / np.cos(roll), R11 / np.cos(roll))
+    pitch = np.arcsin(-R31)
+    roll = np.arctan2(R32 / np.cos(pitch), R33 / np.cos(pitch))
+    yaw = np.arctan2(R21 / np.cos(pitch), R11 / np.cos(pitch))
 
-    return yaw, roll, pitch
+    return yaw, pitch, roll
