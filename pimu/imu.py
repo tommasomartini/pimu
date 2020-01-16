@@ -1,3 +1,19 @@
+"""This module contains functions to read data from a GY-521 MPU-5060 IMU.
+
+Coordinate system:
+* X axis: along the short side of the board, pointing from the side with
+  the pins to the opposite side.
+* Y axis: along the long side of the board, pointing from the bottom to the top
+  of the board, if the side with the pins is held on the left and the chips
+  upwards.
+* Z axis: found by cross-product between X and Y axes.
+
+Note:
+    What above described seems to be the reference system drawn on the top face
+    of the board, but the actual values read from the accelerometer seem
+    to follow the opposite convention. That's why we negate all the values
+    between returning them.
+"""
 import logging
 
 import pimu.constants as const
@@ -40,6 +56,10 @@ def _read_raw_accelerometer_data(bus, device_address):
 
 
 def read_accelerometer_data(bus, device_address, afs_sel):
+    """Returns a tuple with the accelerometer readings along the X, Y and Z
+    axes, in g units (e.g. a reading of 1 means 9.81 m/s/s along a certain
+    axis).
+    """
     sensitivity = const.ACCEL_SENSITIVITY[afs_sel]
     data = tuple(map(lambda x: - x / sensitivity,
                      _read_raw_accelerometer_data(bus, device_address)))
