@@ -37,9 +37,9 @@ class BuildRotationMatrixTest(unittest.TestCase):
         pitch_rad = 0
         roll_rad = 0
         expected_rotation_matrix = np.array([
-            [1, 0, 0],
-            [0, _SQRT3 / 2, -0.5],
-            [0, 0.5, _SQRT3 / 2],
+            [_SQRT3 / 2, -0.5, 0],
+            [0.5, _SQRT3 / 2, 0],
+            [0, 0, 1],
         ])
 
         rotation_matrix = \
@@ -69,9 +69,9 @@ class BuildRotationMatrixTest(unittest.TestCase):
         pitch_rad = 0
         roll_rad = np.deg2rad(30)
         expected_rotation_matrix = np.array([
-            [_SQRT3 / 2, -0.5, 0],
-            [0.5, _SQRT3 / 2, 0],
-            [0, 0, 1],
+            [1, 0, 0],
+            [0, _SQRT3 / 2, -0.5],
+            [0, 0.5, _SQRT3 / 2],
         ])
 
         rotation_matrix = \
@@ -85,9 +85,9 @@ class BuildRotationMatrixTest(unittest.TestCase):
         pitch_rad = np.deg2rad(45)
         roll_rad = np.deg2rad(10)
         expected_rotation_matrix = np.array([
-            [0.6963642, -0.1227878,  0.7071068],
-            [0.4985659,  0.7914746, -0.3535534],
-            [-0.5162450,  0.5987412,  0.6123725],
+            [0.6123725, -0.3860665,  0.6898932],
+            [0.3535534,  0.9142624,  0.1977984],
+            [-0.7071068,  0.1227878,  0.6963642],
         ])
 
         rotation_matrix = \

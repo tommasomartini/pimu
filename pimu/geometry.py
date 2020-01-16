@@ -2,8 +2,8 @@
 
 Every time we deal with a rotation, we adopt one of the following (equivalent)
 conventions:
-* intrinsic rotations: x - y'- z" (yaw - pitch - roll)
-* extrinsic rotations: z - y - x
+* intrinsic rotations: z - y'- x" (yaw - pitch - roll)
+* extrinsic rotations: x - y - z
 
 The relation between axes and Tait-Bryan angles here used holds if the axes
 are so oriented:
@@ -41,20 +41,20 @@ def build_rotation_matrix(yaw_rad, pitch_rad, roll_rad):
     """Builds and returns a rotation matrix.
 
     The applied rotation of the object in the reference system is the series
-    of intrinsic rotations: x - y'- z".
+    of intrinsic rotations: z - y'- x".
 
     Args:
-        yaw_rad (float): Rotation around the X axis in radians.
+        yaw_rad (float): Rotation around the Z axis in radians.
         pitch_rad (float): Rotation around the Y axis in radians.
-        roll_rad (float): Rotation around the Z axis in radians.
+        roll_rad (float): Rotation around the X axis in radians.
 
     Returns:
         A numpy array with shape (3, 3).
     """
     yaw_matrix = np.array([
-        [1, 0, 0],
-        [0, np.cos(yaw_rad), -np.sin(yaw_rad)],
-        [0, np.sin(yaw_rad), np.cos(yaw_rad)],
+        [np.cos(yaw_rad), -np.sin(yaw_rad), 0],
+        [np.sin(yaw_rad), np.cos(yaw_rad), 0],
+        [0, 0, 1],
     ])
     pitch_matrix= np.array([
         [np.cos(pitch_rad), 0, np.sin(pitch_rad)],
@@ -62,10 +62,11 @@ def build_rotation_matrix(yaw_rad, pitch_rad, roll_rad):
         [-np.sin(pitch_rad), 0, np.cos(pitch_rad)],
     ])
     roll_matrix = np.array([
-        [np.cos(roll_rad), -np.sin(roll_rad), 0],
-        [np.sin(roll_rad), np.cos(roll_rad), 0],
-        [0, 0, 1],
+        [1, 0, 0],
+        [0, np.cos(roll_rad), -np.sin(roll_rad)],
+        [0, np.sin(roll_rad), np.cos(roll_rad)],
     ])
+
     rotation_matrix = yaw_matrix @ pitch_matrix @ roll_matrix
     return rotation_matrix
 
