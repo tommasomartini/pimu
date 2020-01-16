@@ -29,7 +29,75 @@ class AlmostEqualTest(unittest.TestCase):
         self.assertTrue(geom._almost_equal(-0.1, 0.1, -0.21))
 
 
-class TaitBryanAnglesFromRotationMatrix(unittest.TestCase):
+class BuildRotationMatrixTest(unittest.TestCase):
+
+    @staticmethod
+    def test_only_yaw():
+        yaw_rad = np.deg2rad(30)
+        pitch_rad = 0
+        roll_rad = 0
+        expected_rotation_matrix = np.array([
+            [1, 0, 0],
+            [0, _SQRT3 / 2, -0.5],
+            [0, 0.5, _SQRT3 / 2],
+        ])
+
+        rotation_matrix = \
+            geom.build_rotation_matrix(yaw_rad, pitch_rad, roll_rad)
+        np.testing.assert_almost_equal(expected_rotation_matrix,
+                                       rotation_matrix)
+
+    @staticmethod
+    def test_only_pitch():
+        yaw_rad = 0
+        pitch_rad = np.deg2rad(30)
+        roll_rad = 0
+        expected_rotation_matrix = np.array([
+            [_SQRT3 / 2, 0, 0.5],
+            [0, 1, 0],
+            [-0.5, 0, _SQRT3 / 2],
+        ])
+
+        rotation_matrix = \
+            geom.build_rotation_matrix(yaw_rad, pitch_rad, roll_rad)
+        np.testing.assert_almost_equal(expected_rotation_matrix,
+                                       rotation_matrix)
+
+    @staticmethod
+    def test_only_roll():
+        yaw_rad = 0
+        pitch_rad = 0
+        roll_rad = np.deg2rad(30)
+        expected_rotation_matrix = np.array([
+            [_SQRT3 / 2, -0.5, 0],
+            [0.5, _SQRT3 / 2, 0],
+            [0, 0, 1],
+        ])
+
+        rotation_matrix = \
+            geom.build_rotation_matrix(yaw_rad, pitch_rad, roll_rad)
+        np.testing.assert_almost_equal(expected_rotation_matrix,
+                                       rotation_matrix)
+
+    @staticmethod
+    def test_yaw_pitch_roll_together():
+        yaw_rad = np.deg2rad(30)
+        pitch_rad = np.deg2rad(45)
+        roll_rad = np.deg2rad(10)
+        expected_rotation_matrix = np.array([
+            [0.6963642, -0.1227878,  0.7071068],
+            [0.4985659,  0.7914746, -0.3535534],
+            [-0.5162450,  0.5987412,  0.6123725],
+        ])
+
+        rotation_matrix = \
+            geom.build_rotation_matrix(yaw_rad, pitch_rad, roll_rad)
+        np.testing.assert_almost_equal(expected_rotation_matrix,
+                                       rotation_matrix)
+
+
+@unittest.skip("temporarily disabled")
+class TaitBryanAnglesFromRotationMatrixTest(unittest.TestCase):
 
     def test_roll_not_90_deg(self):
         expected_yaw = _PI / 4

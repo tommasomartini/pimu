@@ -2,8 +2,22 @@
 
 Every time we deal with a rotation, we adopt one of the following (equivalent)
 conventions:
-* intrinsic rotations: z - y'- x" (yaw - roll - pitch)
-* extrinsic rotations: x - y - z
+* intrinsic rotations: x - y'- z" (yaw - pitch - roll)
+* extrinsic rotations: z - y - x
+
+The relation between axes and Tait-Bryan angles here used holds if the axes
+are so oriented:
+* X axis: back to front
+* Y axis: left to right
+* Z axis: top to bottom.
+An advantage of this convention is that after a rotation, the yaw is still
+the angle of the rotated object around the "gravity vector" and the pitch
+is still the angle of the object with the ground plane.
+
+The adopted convention rotates an object, not a system. That is, given an
+initial system U and a point P in U, the operation:
+    Q = <rotation_matrix, P>
+returns a vector Q in U coordinates obtained by rotating P.
 
 See:
     https://en.wikipedia.org/wiki/Euler_angles#Tait%E2%80%93Bryan_angles
@@ -23,33 +37,36 @@ def _almost_equal(v1, v2, tolerance=None):
     return np.abs(v1 - v2) < tolerance
 
 
-def build_rotation_matrix(yaw_rad, roll_rad, pitch_rad):
+def build_rotation_matrix(yaw_rad, pitch_rad, roll_rad):
     """Builds and returns a rotation matrix.
 
+    The applied rotation of the object in the reference system is the series
+    of intrinsic rotations: x - y'- z".
+
     Args:
-        yaw_rad (float): Rotation around the Z axis in radians.
-        roll_rad (float): Rotation around the Y axis in radians.
-        pitch_rad (float): Rotation around the X axis in radians.
+        yaw_rad (float): Rotation around the X axis in radians.
+        pitch_rad (float): Rotation around the Y axis in radians.
+        roll_rad (float): Rotation around the Z axis in radians.
 
     Returns:
         A numpy array with shape (3, 3).
     """
     yaw_matrix = np.array([
-        [np.cos(yaw_rad), -np.sin(yaw_rad), 0],
-        [np.sin(yaw_rad), np.cos(yaw_rad), 0],
-        [0, 0, 1],
+        [1, 0, 0],
+        [0, np.cos(yaw_rad), -np.sin(yaw_rad)],
+        [0, np.sin(yaw_rad), np.cos(yaw_rad)],
+    ])
+    pitch_matrix= np.array([
+        [np.cos(pitch_rad), 0, np.sin(pitch_rad)],
+        [0, 1, 0],
+        [-np.sin(pitch_rad), 0, np.cos(pitch_rad)],
     ])
     roll_matrix = np.array([
-        [np.cos(roll_rad), 0, np.sin(roll_rad)],
-        [0, 1, 0],
-        [-np.sin(roll_rad), 0, np.cos(roll_rad)],
+        [np.cos(roll_rad), -np.sin(roll_rad), 0],
+        [np.sin(roll_rad), np.cos(roll_rad), 0],
+        [0, 0, 1],
     ])
-    pitch_matrix = np.array([
-        [1, 0, 0],
-        [0, np.cos(pitch_rad), -np.sin(pitch_rad)],
-        [0, np.sin(pitch_rad), np.cos(pitch_rad)],
-    ])
-    rotation_matrix = yaw_matrix @ roll_matrix @ pitch_matrix
+    rotation_matrix = yaw_matrix @ pitch_matrix @ roll_matrix
     return rotation_matrix
 
 
