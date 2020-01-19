@@ -43,32 +43,10 @@ def _log_gyroscope(x, y, z):
     logger.info(formatted_string)
 
 
-def _accelerometer_data_to_taitbryan(acc_x, acc_y, acc_z):
-    gravity_vec = np.array([acc_x, acc_y, acc_z])
-
-    # The Z axis of the world coordinate system.
-    reference_z = - gravity_vec / np.linalg.norm(gravity_vec)
-
-    # Assume the world's Y axis is in the plane of the world's Z axis and the
-    # board's Y axis.
-    board_x_axis = np.array([1, 0, 0])
-    reference_y = np.cross(reference_z, board_x_axis)
-    reference_x = np.cross(reference_y, reference_z)
-
-    # This is the matrix rotating the world's axes to overlap the board's axes.
-    world2board_matrix = np.array([reference_x, reference_y, reference_z]).T
-
-    # Go from a rotation matrix to the Tait-Bryan angles.
-    yaw, roll, pitch = \
-        geom.tait_bryan_angles_from_rotation_matrix(world2board_matrix)
-
-    return yaw, roll, pitch
-
-
 def main():
     logger.info('Start up')
 
-    UDP_IP = '192.168.1.84'
+    UDP_IP = '192.168.1.128'
     UDP_PORT = 5005
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -104,13 +82,12 @@ def main():
         gyro_x, gyro_y, gyro_z = \
             pimu.read_gyroscope_data(bus, device_address, fs_sel=FS_SEL)
 
-        yaw, roll, pitch = _accelerometer_data_to_taitbryan(acc_x, acc_y, acc_z)
         msg = json.dumps({
-            'yaw': yaw,
-            'roll': roll,
-            'pitch': pitch,
+            'acc_x': acc_x,
+            'acc_y': acc_y,
+            'acc_z': acc_z,
         })
-        sock.sendto(bytes(msg, "ascii"), (UDP_IP, UDP_PORT))
+        sock.sendto(bytes(msg, 'utf-8'), (UDP_IP, UDP_PORT))
 
         if CALIBRATE:
             acc_x -= err_acc_x
