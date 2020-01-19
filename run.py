@@ -2,12 +2,10 @@ import json
 import logging
 import smbus
 import socket
+import time
 from time import sleep
 
-import numpy as np
-
 import pimu.calibration as calib
-import pimu.geometry as geom
 import pimu.imu as pimu
 import pimu.init as init
 import pimu.registers as regs
@@ -86,6 +84,11 @@ def main():
             'acc_x': acc_x,
             'acc_y': acc_y,
             'acc_z': acc_z,
+            'gyro_x': gyro_x,
+            'gyro_y': gyro_y,
+            'gyro_z': gyro_z,
+            'temp': temp_deg,
+            'timestamp_ms': int(round(time.time() * 1000)),
         })
         sock.sendto(bytes(msg, 'utf-8'), (UDP_IP, UDP_PORT))
 
