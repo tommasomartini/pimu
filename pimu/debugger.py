@@ -1,7 +1,6 @@
 import itertools as it
 import json
 import socket
-import time
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -64,44 +63,43 @@ class Board:
                                                      pitch_rad=pitch_rad,
                                                      roll_rad=roll_rad)
 
-        # Matplotlib's reference system for drawing a plot has the Z axis
-        # pointing upwards. The following concatenation only serves for
-        # data visualization.
-        plot_adapting_rotation_matrix = np.array([
-            [0, 1, 0],
-            [1, 0, 0],
-            [0, 0, -1],
-        ]).T
-        rotation_matrix = plot_adapting_rotation_matrix @ rotation_matrix
-
         self._vertices = rotation_matrix @ self._init_vertices
         self._board_axes = rotation_matrix @ self._init_board_axes
 
     def _plot_parallelepiped(self, ax):
         # "n" stands for "negative" and "p" for positive.
-        nnp, nnn, pnp, pnn, npp, npn, ppp, ppn = self._vertices.T
+        nnn, nnp, npn, npp, pnn, pnp, ppn, ppp = self._vertices.T
 
-        top_face = [nnp, npp, ppp, pnp]
-        bottom_face = [nnn, npn, ppn, pnn]
-        front_face = [npn, npp, ppp, ppn]
-        back_face = [nnn, nnp, pnp, pnn]
-        left_face = [nnn, nnp, npp, npn]
-        right_face = [pnn, pnp, ppp, ppn]
+        front_face = [pnn, pnp, ppp, ppn]   # positive X
+        back_face = [nnn, nnp, npp, npn]    # negative X
+        right_face = [npn, npp, ppp, ppn]   # positive Y
+        left_face = [nnn, nnp, pnp, pnn]    # negative Y
+        bottom_face = [nnp, npp, ppp, pnp]  # positive Z
+        top_face = [nnn, npn, ppn, pnn]     # negative Z
 
         facecolors = [
-            'w',    # top
-            'b',    # bottom
-            'w',    # front
-            'g',    # back
-            'r',    # left
-            'w',    # right
+            'w',  # front
+            'g',  # back
+            'w',  # right
+            'r',  # left
+            'b',  # bottom
+            'w',  # top
         ]
-        poly_collections = Poly3DCollection([top_face,
-                                             bottom_face,
-                                             front_face,
-                                             back_face,
-                                             left_face,
-                                             right_face],
+
+        # Matrix with shape (6, 4, 3) representing 6 sides of the board,
+        # each defined by 4 corners given in 3D cartesian coordinates.
+        all_sides = np.array([front_face,
+                              back_face,
+                              right_face,
+                              left_face,
+                              bottom_face,
+                              top_face])
+
+        # Adapt the coordinates for Matplotlib visualization.
+        all_sides[:, :, [0, 1]] = all_sides[:, :, [1, 0]]
+        all_sides[:, :, -1] *= -1
+
+        poly_collections = Poly3DCollection(all_sides,
                                             facecolors=facecolors,
                                             alpha=0.5)
         ax.add_collection3d(poly_collections)
@@ -109,7 +107,15 @@ class Board:
     def _plot_axes(self, ax):
         colors = ['r', 'g', 'b']
         origin = np.zeros(3)
-        lines = [[origin, axis] for axis in self._board_axes.T]
+
+        # Matrix of shape (3, 2, 3), representing 3 axis, each defined by two
+        # points expressed in 3D coordinates.
+        lines = np.array([[origin, axis] for axis in self._board_axes.T])
+
+        # Adapt the coordinates for Matplotlib visualization.
+        lines[:, :, [0, 1]] = lines[:, :, [1, 0]]
+        lines[:, :, -1] *= -1
+
         line_collection = Line3DCollection(lines, colors=colors, linewidths=2)
         ax.add_collection(line_collection)
 
