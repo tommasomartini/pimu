@@ -98,7 +98,7 @@ class BuildRotationMatrixTest(unittest.TestCase):
 
 class TaitBryanAnglesFromRotationMatrixTest(unittest.TestCase):
 
-    def test_roll_not_90_deg(self):
+    def test_pitch_not_90_deg(self):
         expected_yaw = np.deg2rad(15)
         expected_pitch = np.deg2rad(45)
         expected_roll = np.deg2rad(20)
@@ -115,7 +115,7 @@ class TaitBryanAnglesFromRotationMatrixTest(unittest.TestCase):
         self.assertAlmostEqual(pitch, expected_pitch, places=6)
         self.assertAlmostEqual(roll, expected_roll, places=6)
 
-    def test_roll_plus_90_deg(self):
+    def test_pitch_plus_90_deg(self):
         expected_yaw = 0
         expected_pitch = _PI / 2
         expected_roll = np.deg2rad(30)
@@ -132,7 +132,7 @@ class TaitBryanAnglesFromRotationMatrixTest(unittest.TestCase):
         self.assertAlmostEqual(pitch, expected_pitch, places=6)
         self.assertAlmostEqual(roll, expected_roll, places=6)
 
-    def test_roll_minus_90_deg(self):
+    def test_pitch_minus_90_deg(self):
         expected_yaw = 0
         expected_pitch = - _PI / 2
         expected_roll = np.deg2rad(-30)
