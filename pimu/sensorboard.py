@@ -20,6 +20,10 @@ def accelerometer_data_to_conventional_system(acc_x, acc_y, acc_z):
     return acc_y, acc_x, -acc_z
 
 
+def gyroscope_data_to_conventional_system(gyro_x, gyro_y, gyro_z):
+    return np.deg2rad(gyro_y), np.deg2rad(gyro_x), -np.deg2rad(gyro_z)
+
+
 def accelerometer_data_to_taitbryan(acc_x, acc_y, acc_z):
     """Returns yaw, pitch and roll from the accelerometer data.
 

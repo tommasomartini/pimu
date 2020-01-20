@@ -94,6 +94,9 @@ def _read_raw_gyroscope_data(bus, device_address):
 
 
 def read_gyroscope_data(bus, device_address, fs_sel):
+    """Returns a tuple with the gyroscope readings around the X, Y and Z
+    axes, in degrees / second.
+    """
     sensitivity = const.GYRO_SENSITIVITY[fs_sel]
     data = tuple(map(lambda x: x / sensitivity,
                      _read_raw_gyroscope_data(bus, device_address)))
