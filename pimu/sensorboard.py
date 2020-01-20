@@ -21,7 +21,50 @@ def accelerometer_data_to_conventional_system(acc_x, acc_y, acc_z):
 
 
 def gyroscope_data_to_conventional_system(gyro_x, gyro_y, gyro_z):
+    """Translates the gyroscope data measurements from the native coordinate
+    system of the sensor to the conventional system.
+
+    Native system:
+        X axis: to the right
+        Y axis: forward
+        Z axis: upward
+
+    Conventional system:
+        X axis: forward
+        Y axis: to the right
+        Z axis: downward
+    """
     return np.deg2rad(gyro_y), np.deg2rad(gyro_x), -np.deg2rad(gyro_z)
+
+
+def gyroscope_data_to_taitbryan(gyro_x, gyro_y, gyro_z, delta_time_ms):
+    """Returns yaw, pitch and roll from the gyroscope data.
+
+    In this function the system in use is aligned with the sensor board as
+    follows:
+        X axis: forward
+        Y axis: to the right
+        Z axis: downward
+
+    The output Tait-Bryan angles describe the rotation of the body from its
+    current position that occurred in the last time interval.
+
+    Args:
+        gyro_x (float): Angular velocity in deg/s around the board's X axis.
+        gyro_y (float): Angular velocity in deg/s around the board's Y axis.
+        gyro_z (float): Angular velocity in deg/s around the board's Z axis.
+        delta_time_ms (int): Time interval in milliseconds between the previous
+            measurement and the current one.
+
+    Returns:
+        A tuple (yaw, pitch, roll) in radians, describing the rotation of the
+        board from its current position that occurred in the givent
+        time interval.
+    """
+    delta_yaw = gyro_z * delta_time_ms / 1000
+    delta_pitch = gyro_y * delta_time_ms / 1000
+    delta_roll = gyro_x * delta_time_ms / 1000
+    return delta_yaw, delta_pitch, delta_roll
 
 
 def accelerometer_data_to_taitbryan(acc_x, acc_y, acc_z):
@@ -33,7 +76,7 @@ def accelerometer_data_to_taitbryan(acc_x, acc_y, acc_z):
         Y axis: to the right
         Z axis: downward
 
-    The output Euler angles describe the rotation of the body from the
+    The output Tait-Bryan angles describe the rotation of the body from the
     reference frame:
         X axis: pointing North
         Y axis: pointing East
