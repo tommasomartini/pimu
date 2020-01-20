@@ -80,6 +80,15 @@ def main():
         gyro_x, gyro_y, gyro_z = \
             pimu.read_gyroscope_data(bus, device_address, fs_sel=FS_SEL)
 
+        if CALIBRATE:
+            acc_x -= err_acc_x
+            acc_y -= err_acc_y
+            acc_z -= (err_acc_z + 1)
+
+            gyro_x -= err_gyro_x
+            gyro_y -= err_gyro_y
+            gyro_z -= err_gyro_z
+
         msg = json.dumps({
             'acc_x': acc_x,
             'acc_y': acc_y,
@@ -91,15 +100,6 @@ def main():
             'timestamp_ms': int(round(time.time() * 1000)),
         })
         sock.sendto(bytes(msg, 'utf-8'), (UDP_IP, UDP_PORT))
-
-        if CALIBRATE:
-            acc_x -= err_acc_x
-            acc_y -= err_acc_y
-            acc_z -= (err_acc_z + 1)
-
-            gyro_x -= err_gyro_x
-            gyro_y -= err_gyro_y
-            gyro_z -= err_gyro_z
 
         _log_accelerometer(acc_x, acc_y, acc_z)
         _log_temperature(temp_deg)
