@@ -46,11 +46,11 @@ class Board:
         self._vertices = self._init_vertices
         self._board_axes = self._init_board_axes
 
-        # self._yaw = 0
-        # self._pitch = 0
-        # self._roll = 0
+        self._yaw = 0
+        self._pitch = 0
+        self._roll = 0
 
-    def rotate(self, yaw_rad, pitch_rad, roll_rad):
+    def rotate(self, acc_yaw, acc_pitch, acc_roll, gyro_yaw_delta, gyro_pitch_delta, gyro_roll_delta):
         """Rotates the board from its current orientation.
 
         The rotation follows one of the following two (equivalent) conventions:
@@ -67,9 +67,15 @@ class Board:
         # self._pitch += pitch_rad
         # self._roll += roll_rad
 
-        self._yaw = yaw_rad
-        self._pitch = pitch_rad
-        self._roll = roll_rad
+        gyro_yaw = self._yaw + gyro_yaw_delta
+        gyro_pitch = self._pitch + gyro_pitch_delta
+        gyro_roll = self._roll + gyro_roll_delta
+
+        acc_weight = 0.
+
+        self._yaw = gyro_yaw
+        self._pitch = acc_weight * acc_pitch + (1 - acc_weight) * gyro_pitch
+        self._roll = acc_weight * acc_roll + (1 - acc_weight) * gyro_roll
 
         # Build the rotation matrix.
         rotation_matrix = geom.build_rotation_matrix(yaw_rad=self._yaw,
@@ -186,12 +192,12 @@ def main():
         gyro_x, gyro_y, gyro_z = \
             sb.gyroscope_data_to_conventional_system(gyro_x, gyro_y, gyro_z)
 
-        yaw, pitch, roll = sb.accelerometer_data_to_taitbryan(acc_x=acc_x,
+        acc_yaw, acc_pitch, acc_roll = sb.accelerometer_data_to_taitbryan(acc_x=acc_x,
                                                               acc_y=acc_y,
                                                               acc_z=acc_z)
 
         delta_time_ms = timestamp_ms - prev_time_ms
-        yaw_delta, pitch_delta, roll_delta = \
+        gyro_yaw_delta, gyro_pitch_delta, gyro_roll_delta = \
             sb.gyroscope_data_to_taitbryan(gyro_x=gyro_x,
                                            gyro_y=gyro_y,
                                            gyro_z=gyro_z,
@@ -199,7 +205,7 @@ def main():
         prev_time_ms = timestamp_ms
 
         ax.clear()
-        board.rotate(yaw_rad=yaw, pitch_rad=pitch, roll_rad=roll)
+        board.rotate(acc_yaw, acc_pitch, acc_roll, gyro_yaw_delta, gyro_pitch_delta, gyro_roll_delta)
         board.plot(ax)
         ax.set_xlabel('X axis')
         ax.set_ylabel('Y axis')
