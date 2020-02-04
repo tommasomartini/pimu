@@ -46,6 +46,10 @@ class Board:
         self._vertices = self._init_vertices
         self._board_axes = self._init_board_axes
 
+        # self._yaw = 0
+        # self._pitch = 0
+        # self._roll = 0
+
     def rotate(self, yaw_rad, pitch_rad, roll_rad):
         """Rotates the board from its current orientation.
 
@@ -58,10 +62,19 @@ class Board:
             pitch_rad (float): Rotation around the Y axis in radians.
             roll_rad (float): Rotation around the X axis in radians.
         """
+
+        # self._yaw += yaw_rad
+        # self._pitch += pitch_rad
+        # self._roll += roll_rad
+
+        self._yaw = yaw_rad
+        self._pitch = pitch_rad
+        self._roll = roll_rad
+
         # Build the rotation matrix.
-        rotation_matrix = geom.build_rotation_matrix(yaw_rad=yaw_rad,
-                                                     pitch_rad=pitch_rad,
-                                                     roll_rad=roll_rad)
+        rotation_matrix = geom.build_rotation_matrix(yaw_rad=self._yaw,
+                                                     pitch_rad=self._pitch,
+                                                     roll_rad=self._roll)
 
         self._vertices = rotation_matrix @ self._init_vertices
         self._board_axes = rotation_matrix @ self._init_board_axes
@@ -141,7 +154,7 @@ class Board:
 def main():
     board = Board()
 
-    UDP_IP = "192.168.1.128"
+    UDP_IP = "192.168.1.33"
     UDP_PORT = 5005
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((UDP_IP, UDP_PORT))
@@ -149,18 +162,41 @@ def main():
     fig = plt.figure()
     ax = fig.add_subplot(111, projection=Axes3D.name)
 
+    prev_time_ms = None
+
     while True:
         data, addr = sock.recvfrom(1024)  # buffer size is 1024 bytes
         data_dict = json.loads(data.decode('utf-8'))
-        acc_x, acc_y, acc_z = map(float, [data_dict['acc_x'],
-                                          data_dict['acc_y'],
-                                          data_dict['acc_z']])
+        acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, timestamp_ms = \
+            map(float, [data_dict['acc_x'],
+                        data_dict['acc_y'],
+                        data_dict['acc_z'],
+                        data_dict['gyro_x'],
+                        data_dict['gyro_y'],
+                        data_dict['gyro_z'],
+                        data_dict['timestamp_ms']])
+
+        if prev_time_ms is None:
+            prev_time_ms = timestamp_ms
+            continue
 
         acc_x, acc_y, acc_z = \
             sb.accelerometer_data_to_conventional_system(acc_x, acc_y, acc_z)
+
+        gyro_x, gyro_y, gyro_z = \
+            sb.gyroscope_data_to_conventional_system(gyro_x, gyro_y, gyro_z)
+
         yaw, pitch, roll = sb.accelerometer_data_to_taitbryan(acc_x=acc_x,
                                                               acc_y=acc_y,
                                                               acc_z=acc_z)
+
+        delta_time_ms = timestamp_ms - prev_time_ms
+        yaw_delta, pitch_delta, roll_delta = \
+            sb.gyroscope_data_to_taitbryan(gyro_x=gyro_x,
+                                           gyro_y=gyro_y,
+                                           gyro_z=gyro_z,
+                                           delta_time_ms=delta_time_ms)
+        prev_time_ms = timestamp_ms
 
         ax.clear()
         board.rotate(yaw_rad=yaw, pitch_rad=pitch, roll_rad=roll)
