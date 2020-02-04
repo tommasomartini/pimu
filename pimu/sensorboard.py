@@ -122,3 +122,22 @@ def accelerometer_data_to_taitbryan(acc_x, acc_y, acc_z):
         geom.tait_bryan_angles_from_rotation_matrix(reference_to_body_rotation_matrix)
 
     return yaw, pitch, roll
+
+
+def TEMP_pitch_roll_from_accelerometer(acc_x, acc_y, acc_z):
+    """
+
+    See: https://www.nxp.com/files-static/sensors/doc/app_note/AN3461.pdf
+    """
+    acc_vector = np.array([acc_x, acc_y, acc_z])
+    gravity = acc_vector / np.linalg.norm(acc_vector)
+    x, y, z = gravity
+
+    yaw = 0
+    # pitch = np.arctan(-x / np.sqrt(y ** 2 + z ** 2))
+    # roll = np.arctan(y / z)
+
+    pitch = np.arctan2(-x, np.sqrt(y ** 2 + z ** 2))
+    roll = np.arctan2(y, z)
+
+    return yaw, pitch, roll
