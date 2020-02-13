@@ -10,15 +10,18 @@ _LIM_NUM_SAMPLES = 20
 def generate_data():
     for i in range(1000):
         time.sleep(0.02)
-        yaw, pitch, roll = np.random.randn(3) * np.deg2rad(2)
+        yaw, pitch, roll = 2 * (np.random.rand(3) - 0.5) * 190
         yield i, (yaw, pitch, roll)
 
 
 def main():
     fig = plt.figure()
-    ax_yaw = fig.add_subplot(3, 1, 1)
-    ax_pitch = fig.add_subplot(3, 1, 2)
-    ax_roll = fig.add_subplot(3, 1, 3)
+
+    grid = plt.GridSpec(3, 2)
+
+    ax_yaw = fig.add_subplot(grid[0, 1])
+    ax_pitch = fig.add_subplot(grid[1, 1], sharex=ax_yaw)
+    ax_roll = fig.add_subplot(grid[2, 1], sharex=ax_yaw)
 
     xs = []
     ys_yaw = []
@@ -48,15 +51,13 @@ def main():
         ax_roll.clear()
         roll_plot = ax_roll.plot(xs, ys_roll)
 
-        # Format plot
-        plt.xticks(rotation=45, ha='right')
-        plt.subplots_adjust(bottom=0.30)
-        plt.title('Tait-Bryan angles')
-        plt.ylabel('Radians')
+        ax_yaw.set_ylim(-180, 180)
+        ax_pitch.set_ylim(-180, 180)
+        ax_roll.set_ylim(-180, 180)
 
-        ax_yaw.set_ylim(-np.pi, np.pi)
-        ax_pitch.set_ylim(-np.pi, np.pi)
-        ax_roll.set_ylim(-np.pi, np.pi)
+        ax_yaw.set_ylabel('Yaw (degrees)')
+        ax_pitch.set_ylabel('Pitch (degrees)')
+        ax_roll.set_ylabel('Roll (degrees)')
 
         return yaw_plot[0], pitch_plot[0], roll_plot[0]
 
