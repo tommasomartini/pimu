@@ -43,7 +43,8 @@ class BoardModel:
         self._init_vertices = np.array(list(it.product(*vertices_coords))).T
 
         # X, Y and Z axes as column vectors.
-        self._init_board_axes = np.diag(self._AXES_SCALE * half_dimensions)
+        self._init_board_axes = \
+            np.diag(self._AXES_SCALE * np.max(half_dimensions) * np.ones(3))
 
         self._vertices = self._init_vertices
         self._board_axes = self._init_board_axes
@@ -120,7 +121,27 @@ class BoardModel:
         line_collection = Line3DCollection(lines, colors=colors, linewidths=2)
         ax.add_collection(line_collection)
 
+    def _plot_reference_axes(self, ax):
+        colors = ['r', 'g', 'b']
+        origin = np.zeros(3)
+
+        # Matrix of shape (3, 2, 3), representing 3 axis, each defined by two
+        # points expressed in 3D coordinates.
+        lines = np.array([[origin, axis] for axis in self._init_board_axes.T])
+
+        # Adapt the coordinates for Matplotlib visualization.
+        lines[:, :, [0, 1]] = lines[:, :, [1, 0]]
+        lines[:, :, -1] *= -1
+
+        line_collection = Line3DCollection(lines,
+                                           colors=colors,
+                                           linewidths=2,
+                                           alpha=0.5,
+                                           linestyle='--')
+        ax.add_collection(line_collection)
+
     def plot(self, ax):
+        self._plot_reference_axes(ax)
         self._plot_parallelepiped(ax)
         self._plot_axes(ax)
 
@@ -149,9 +170,9 @@ def main():
     fig = plt.figure()
     ax = fig.add_subplot(111, projection=Axes3D.name)
 
-    board_model.rotate(yaw_rad=np.deg2rad(0),
-                       pitch_rad=np.deg2rad(30),
-                       roll_rad=np.deg2rad(10))
+    board_model.rotate(yaw_rad=np.deg2rad(45),
+                       pitch_rad=np.deg2rad(45),
+                       roll_rad=np.deg2rad(0))
     board_model.plot(ax)
 
     plt.show()
