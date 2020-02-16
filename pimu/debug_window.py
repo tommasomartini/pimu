@@ -3,36 +3,19 @@ import time
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 from mpl_toolkits.mplot3d import Axes3D
 
 _RATE_hz = 10
+
+sns.set()
 
 
 def generate_data():
     for i in range(1000):
         time.sleep(1 / _RATE_hz)
-        data = 2 * (np.random.rand(VisualDebugger._NUM_SUBPLOTS_ROWS) - 0.5) * 170
+        data = 2 * (np.random.rand(VisualDebugger._NUM_SUBPLOTS_ROWS) - 0.5) * 120
         yield data
-
-
-class _PlotParams:
-
-    def __init__(self, ylabel, ylim):
-        self.ylabel = ylabel
-        self.ylim = ylim
-
-
-_plotsParams = [
-    _PlotParams('Yaw (°)', (-180, 180)),
-    _PlotParams('Pitch (°)', (-180, 180)),
-    _PlotParams('Roll (°)', (-180, 180)),
-    _PlotParams('Temp (°C)', (-20, 100)),
-]
-
-
-def _format_axis(ax):
-    ax.yaxis.set_label_position('right')
-    ax.yaxis.tick_right()
 
 
 class VisualDebugger:
@@ -42,28 +25,64 @@ class VisualDebugger:
 
     _XLABEL = 'Time (s)'
 
-    _NUM_SUBPLOTS_ROWS = len(_plotsParams)
+    _NUM_SUBPLOTS_ROWS = 4
     _NUM_SUBPLOTS_COLS = 2
-    _NUM_XTICKS = 5
 
     def __init__(self, rate):
         self._num_samples = rate * self._SHOW_TIME_s
 
-        if self._num_samples < self._NUM_XTICKS:
-            raise ValueError('Less samples than X ticks')
-
-        if self._SHOW_TIME_s < self._NUM_XTICKS:
-            raise ValueError('Less seconds of show-time than X ticks')
-
         # Zero-initialize all the plots.
         self._xs = list(range(self._num_samples))
         self._caches = [
-            [0] * self._num_samples
+            [0 for _ in range(self._num_samples)]
             for _ in range(self._NUM_SUBPLOTS_ROWS)
         ]
 
         # Create the plot elements that will be updated.
         self._plots = [None for _ in range(self._NUM_SUBPLOTS_ROWS)]
+
+    def _format_axes(self, axes):
+        ax_yaw, ax_pitch, ax_roll, ax_temp = axes
+
+        # Yaw axis.
+        ax_yaw.set_ylabel('Yaw (°)')
+        ax_yaw.set_ylim(-200, 200)
+        ax_yaw.yaxis.set_major_locator(plt.MultipleLocator(90))
+        ax_yaw.yaxis.set_minor_locator(plt.MultipleLocator(45))
+        ax_yaw.grid(which='both', axis='y')
+
+        # Pitch axis.
+        ax_pitch.set_ylabel('Pitch (°)')
+        ax_pitch.set_ylim(-200, 200)
+        ax_pitch.yaxis.set_major_locator(plt.MultipleLocator(90))
+        ax_pitch.yaxis.set_minor_locator(plt.MultipleLocator(45))
+        ax_pitch.grid(which='both', axis='y')
+
+        # Roll axis.
+        ax_roll.set_ylabel('Roll (°)')
+        ax_roll.set_ylim(-200, 200)
+        ax_roll.yaxis.set_major_locator(plt.MultipleLocator(90))
+        ax_roll.yaxis.set_minor_locator(plt.MultipleLocator(45))
+        ax_roll.grid(which='both', axis='y')
+
+        # Temperature axis.
+        ax_temp.set_ylabel('Temp (°C)')
+        ax_temp.set_ylim(-50, 120)
+        ax_temp.yaxis.set_major_locator(plt.MultipleLocator(25))
+        ax_temp.grid(True)
+
+        # Common axis formatting.
+        tick_step = int(round(self._num_samples / self._SHOW_TIME_s))
+        ticklabel_step = int(round(self._SHOW_TIME_s // self._SHOW_TIME_s))
+        xtickslabels = range(-self._SHOW_TIME_s, 1, ticklabel_step)
+        for ax in axes:
+            ax.set_xticks(range(-1, self._num_samples, tick_step))
+            ax.set_xticklabels(xtickslabels)
+            ax.yaxis.set_label_position('right')
+            ax.yaxis.tick_right()
+
+        # Set the X axis label only on the last plot.
+        axes[-1].set_xlabel(self._XLABEL)
 
     def _update_cache(self, cache, value):
         cache.append(value)
@@ -85,26 +104,10 @@ class VisualDebugger:
         ax_3d = \
             plt.subplot(1, self._NUM_SUBPLOTS_COLS, 1, projection=Axes3D.name)
 
-        for ax in axes[:, -1]:
-            _format_axis(ax)
-
-        for idx in range(self._NUM_SUBPLOTS_ROWS):
-            ax = axes[idx, -1]
-            _format_axis(ax)
-            ax.set_ylim(_plotsParams[idx].ylim)
-            ax.set_ylabel(_plotsParams[idx].ylabel)
+        self._format_axes(axes[:, -1])
 
         for idx in range(self._NUM_SUBPLOTS_ROWS):
             self._plots[idx] = axes[idx, 1].plot(self._xs, self._caches[idx])[0]
-
-        tick_step = self._num_samples // self._NUM_XTICKS
-        axes[0, 1].set_xticks(list(range(-1, self._num_samples, tick_step)))
-
-        ticklabel_step = self._SHOW_TIME_s // self._NUM_XTICKS
-        xtickslabels = list(range(-self._SHOW_TIME_s, 1, ticklabel_step))
-        axes[0, 1].set_xticklabels(xtickslabels)
-
-        axes[-1, -1].set_xlabel(self._XLABEL)
 
         _ = animation.FuncAnimation(fig=fig,
                                     func=self._animate,
