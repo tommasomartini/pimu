@@ -6,6 +6,8 @@ import numpy as np
 import seaborn as sns
 from mpl_toolkits.mplot3d import Axes3D
 
+import pimu.geometry as geom
+
 _RATE_hz = 10
 
 sns.set()
@@ -39,7 +41,17 @@ class VisualDebugger:
         ]
 
         # Create the plot elements that will be updated.
-        self._plots = [None for _ in range(self._NUM_SUBPLOTS_ROWS)]
+        self._plots = [
+            None,   # yaw
+            None,   # pitch
+            None,   # roll
+            None,   # temperature
+            None,   # X axis
+            None,   # Y axis
+            None,   # Z axis
+        ]
+
+        self._init_board_axes = np.diag(np.ones(3))
 
     def _format_axes(self, axes):
         ax_yaw, ax_pitch, ax_roll, ax_temp = axes
@@ -84,6 +96,23 @@ class VisualDebugger:
         # Set the X axis label only on the last plot.
         axes[-1].set_xlabel(self._XLABEL)
 
+    @staticmethod
+    def _format_axes3d(ax_3d):
+        ax_3d.set_xlim([-2, 2])
+        ax_3d.set_ylim([-2, 2])
+        ax_3d.set_zlim([-2, 2])
+
+        ax_3d.set_xticks([])
+        ax_3d.set_yticks([])
+        ax_3d.set_zticks([])
+
+        ax_3d.set_xlabel('X axis')
+        ax_3d.set_ylabel('Y axis')
+        ax_3d.set_zlabel('Z axis')
+
+        ax_3d.set_aspect('equal')
+        ax_3d.grid(False)
+
     def _update_cache(self, cache, value):
         cache.append(value)
         cache = cache[-self._num_samples:]
@@ -93,6 +122,28 @@ class VisualDebugger:
         for idx, value in enumerate(values):
             self._caches[idx] = self._update_cache(self._caches[idx], value)
             self._plots[idx].set_ydata(self._caches[idx])
+
+        yaw, pitch, roll, _ = values
+        rotation_matrix = geom.build_rotation_matrix(yaw, pitch, roll)
+        board_axes = rotation_matrix @ self._init_board_axes
+
+        # Matrix of shape (3, 2, 3), representing 3 axis, each defined by two
+        # points expressed in 3D coordinates.
+        origin = np.zeros(3)
+        lines = np.array([[origin, axis] for axis in board_axes.T])
+
+        # Adapt the coordinates for Matplotlib visualization.
+        lines[:, :, [0, 1]] = lines[:, :, [1, 0]]
+        lines[:, :, -1] *= -1
+
+        self._plots[4].set_data(lines[0, :, 0], lines[0, :, 1])
+        self._plots[4].set_3d_properties(lines[0, :, 2])
+
+        self._plots[5].set_data(lines[1, :, 0], lines[1, :, 1])
+        self._plots[5].set_3d_properties(lines[1, :, 2])
+
+        self._plots[6].set_data(lines[2, :, 0], lines[2, :, 1])
+        self._plots[6].set_3d_properties(lines[2, :, 2])
 
         return self._plots
 
@@ -105,9 +156,14 @@ class VisualDebugger:
             plt.subplot(1, self._NUM_SUBPLOTS_COLS, 1, projection=Axes3D.name)
 
         self._format_axes(axes[:, -1])
+        self._format_axes3d(ax_3d)
 
         for idx in range(self._NUM_SUBPLOTS_ROWS):
             self._plots[idx] = axes[idx, 1].plot(self._xs, self._caches[idx])[0]
+
+        self._plots[4] = ax_3d.plot([0, 1], [0, 0], [0, 0], color='r')[0]
+        self._plots[5] = ax_3d.plot([0, 0], [0, 1], [0, 0], color='g')[0]
+        self._plots[6] = ax_3d.plot([0, 0], [0, 0], [0, 1], color='b')[0]
 
         _ = animation.FuncAnimation(fig=fig,
                                     func=self._animate,
