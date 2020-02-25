@@ -1,11 +1,9 @@
 import numpy as np
 
-import pimu.geometry as geom
 
-
-def accelerometer_data_to_conventional_system(acc_x, acc_y, acc_z):
+def accelerometer_data_to_board_system(acc_x, acc_y, acc_z):
     """Translates the accelerometer data measurements from the native coordinate
-    system of the sensor to the conventional system.
+    system of the sensor to the conventional board system.
 
     Native system:
         X axis: to the right
@@ -20,9 +18,9 @@ def accelerometer_data_to_conventional_system(acc_x, acc_y, acc_z):
     return acc_y, acc_x, -acc_z
 
 
-def gyroscope_data_to_conventional_system(gyro_x, gyro_y, gyro_z):
+def gyroscope_data_to_board_system(gyro_x, gyro_y, gyro_z):
     """Translates the gyroscope data measurements from the native coordinate
-    system of the sensor to the conventional system.
+    system of the sensor to the conventional board system.
 
     Native system:
         X axis: to the right
@@ -34,11 +32,12 @@ def gyroscope_data_to_conventional_system(gyro_x, gyro_y, gyro_z):
         Y axis: to the right
         Z axis: downward
     """
-    return np.deg2rad(gyro_y), np.deg2rad(gyro_x), -np.deg2rad(gyro_z)
+    return gyro_y, gyro_x, -gyro_z
 
 
-def gyroscope_data_to_taitbryan(gyro_x, gyro_y, gyro_z, delta_time_ms):
-    """Returns yaw, pitch and roll from the gyroscope data.
+def gyroscope_data_to_taitbryan_deltas(gyro_x, gyro_y, gyro_z, delta_time_ms):
+    """Returns a delta for yaw, pitch and roll from the gyroscope data, since
+    the last measurement.
 
     In this function the system in use is aligned with the sensor board as
     follows:
@@ -58,17 +57,16 @@ def gyroscope_data_to_taitbryan(gyro_x, gyro_y, gyro_z, delta_time_ms):
 
     Returns:
         A tuple (yaw, pitch, roll) in radians, describing the rotation of the
-        board from its current position that occurred in the givent
-        time interval.
+        board that occurred in the last given time interval.
     """
-    delta_yaw = gyro_z * delta_time_ms / 1000
-    delta_pitch = gyro_y * delta_time_ms / 1000
-    delta_roll = gyro_x * delta_time_ms / 1000
+    delta_yaw = np.deg2rad(gyro_z) * delta_time_ms / 1000
+    delta_pitch = np.deg2rad(gyro_y) * delta_time_ms / 1000
+    delta_roll = np.deg2rad(gyro_x) * delta_time_ms / 1000
     return delta_yaw, delta_pitch, delta_roll
 
 
-def accelerometer_data_to_taitbryan(acc_x, acc_y, acc_z):
-    """Returns yaw, pitch and roll from the accelerometer data.
+def pitch_and_roll_from_accelerometer_data(acc_x, acc_y, acc_z):
+    """Returns pitch and roll values in radians from 3-axes accelerometer data.
 
     In this function the system in use is aligned with the sensor board as
     follows:
@@ -77,10 +75,15 @@ def accelerometer_data_to_taitbryan(acc_x, acc_y, acc_z):
         Z axis: downward
 
     The output Tait-Bryan angles describe the rotation of the body from the
-    reference frame:
-        X axis: pointing North
-        Y axis: pointing East
-        Z axis: pointing to the ground.
+    reference frame, where the Z axis is directed along the Gravity direction.
+    The rotation occurs as:
+    1) pitch: rotation around the Y axis;
+    2) roll: rotation around the new X axis.
+
+    Since the only force acting on the sensor is the Gravity, we cannot
+    infer the yaw of the board.
+
+    See: https://www.nxp.com/files-static/sensors/doc/app_note/AN3461.pdf
 
     Args:
         acc_x (float): Acceleration in g units along the board's X axis.
@@ -88,56 +91,12 @@ def accelerometer_data_to_taitbryan(acc_x, acc_y, acc_z):
         acc_z (float): Acceleration in g units along the board's Z axis.
 
     Returns:
-        A tuple (yaw, pitch, roll) in radians, describing the rotation of the
+        A tuple (pitch, roll) in radians, describing the rotation of the
         board from the reference frame.
-    """
-    gravity_vec = np.array([acc_x, acc_y, acc_z])
-
-    # The Z axis of the reference coordinate system.
-    to_ground = gravity_vec / np.linalg.norm(gravity_vec)
-
-    # The only known force acting on the sensor is gravity, hence we cannot
-    # know the yaw of the sensor: we assume the yaw is always zero.
-
-    board_y_axis = np.array([0, 1, 0])
-    board_x_axis = np.array([1, 0, 0])
-
-    # Try to use the board's X axis to get a "fake" North.
-    to_north = np.cross(board_y_axis, to_ground)
-    norm_to_north_vector = np.linalg.norm(to_north)
-    if norm_to_north_vector < 1e-6:
-        # The board is lying on a side: we need to use the board's X axis to get
-        # a "fake" East.
-        to_east = np.cross(to_ground, board_x_axis)
-        to_east /= np.linalg.norm(to_east)  # should not be needed, in theory
-        to_north = np.cross(to_east, to_ground)
-    else:
-        to_north /= norm_to_north_vector
-        to_east = np.cross(to_ground, to_north)
-
-    reference_to_body_rotation_matrix = \
-        np.array([to_north, to_east, to_ground])
-
-    yaw, pitch, roll = \
-        geom.tait_bryan_angles_from_rotation_matrix(reference_to_body_rotation_matrix)
-
-    return yaw, pitch, roll
-
-
-def TEMP_pitch_roll_from_accelerometer(acc_x, acc_y, acc_z):
-    """
-
-    See: https://www.nxp.com/files-static/sensors/doc/app_note/AN3461.pdf
     """
     acc_vector = np.array([acc_x, acc_y, acc_z])
     gravity = acc_vector / np.linalg.norm(acc_vector)
-    x, y, z = gravity
-
-    yaw = 0
-    # pitch = np.arctan(-x / np.sqrt(y ** 2 + z ** 2))
-    # roll = np.arctan(y / z)
-
-    pitch = np.arctan2(-x, np.sqrt(y ** 2 + z ** 2))
-    roll = np.arctan2(y, z)
-
-    return yaw, pitch, roll
+    gx, gy, gz = gravity
+    pitch = np.arctan2(-gx, np.sqrt(gy ** 2 + gz ** 2))
+    roll = np.arctan2(gy, gz)
+    return pitch, roll
