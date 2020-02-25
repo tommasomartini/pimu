@@ -16,7 +16,7 @@ sns.set()
 def generate_data():
     for i in range(1000):
         time.sleep(1 / _RATE_hz)
-        data = 2 * (np.random.rand(VisualDebugger._NUM_SUBPLOTS_ROWS) - 0.5) * 120
+        data = 2 * (np.random.rand(7) - 0.5) * 120
         yield data
 
 
@@ -35,16 +35,17 @@ class VisualDebugger:
 
         # Zero-initialize all the plots.
         self._xs = list(range(self._num_samples))
-        self._caches = [
-            [0 for _ in range(self._num_samples)]
-            for _ in range(self._NUM_SUBPLOTS_ROWS)
-        ]
+        self._caches = [[0 for _ in range(self._num_samples)]
+                        for _ in range(7)]
 
         # Create the plot elements that will be updated.
         self._plots = [
             None,   # yaw
             None,   # pitch
             None,   # roll
+            None,   # filtered yaw
+            None,   # filtered pitch
+            None,   # filtered roll
             None,   # temperature
             None,   # X axis
             None,   # Y axis
@@ -123,8 +124,11 @@ class VisualDebugger:
             self._caches[idx] = self._update_cache(self._caches[idx], value)
             self._plots[idx].set_ydata(self._caches[idx])
 
-        yaw, pitch, roll, _ = values
-        rotation_matrix = geom.build_rotation_matrix(yaw, pitch, roll)
+        (yaw, pitch, roll, filtered_yaw,
+         filtered_pitch, filtered_roll, _) = values
+        rotation_matrix = geom.build_rotation_matrix(yaw_rad=filtered_yaw,
+                                                     pitch_rad=filtered_pitch,
+                                                     roll_rad=filtered_roll)
         board_axes = rotation_matrix @ self._init_board_axes
 
         # Matrix of shape (3, 2, 3), representing 3 axis, each defined by two
@@ -136,14 +140,14 @@ class VisualDebugger:
         lines[:, :, [0, 1]] = lines[:, :, [1, 0]]
         lines[:, :, -1] *= -1
 
-        self._plots[4].set_data(lines[0, :, 0], lines[0, :, 1])
-        self._plots[4].set_3d_properties(lines[0, :, 2])
+        self._plots[7].set_data(lines[0, :, 0], lines[0, :, 1])
+        self._plots[7].set_3d_properties(lines[0, :, 2])
 
-        self._plots[5].set_data(lines[1, :, 0], lines[1, :, 1])
-        self._plots[5].set_3d_properties(lines[1, :, 2])
+        self._plots[8].set_data(lines[1, :, 0], lines[1, :, 1])
+        self._plots[8].set_3d_properties(lines[1, :, 2])
 
-        self._plots[6].set_data(lines[2, :, 0], lines[2, :, 1])
-        self._plots[6].set_3d_properties(lines[2, :, 2])
+        self._plots[9].set_data(lines[2, :, 0], lines[2, :, 1])
+        self._plots[9].set_3d_properties(lines[2, :, 2])
 
         return self._plots
 
@@ -158,12 +162,23 @@ class VisualDebugger:
         self._format_axes(axes[:, -1])
         self._format_axes3d(ax_3d)
 
-        for idx in range(self._NUM_SUBPLOTS_ROWS):
-            self._plots[idx] = axes[idx, 1].plot(self._xs, self._caches[idx])[0]
+        for idx in range(3):
+            self._plots[idx] = axes[idx, 1].plot(self._xs,
+                                                 self._caches[idx],
+                                                 color='k',
+                                                 label='raw')[0]
 
-        self._plots[4] = ax_3d.plot([0, 1], [0, 0], [0, 0], color='r')[0]
-        self._plots[5] = ax_3d.plot([0, 0], [0, 1], [0, 0], color='g')[0]
-        self._plots[6] = ax_3d.plot([0, 0], [0, 0], [0, 1], color='b')[0]
+        for idx in range(3):
+            self._plots[idx + 3] = axes[idx, 1].plot(self._xs,
+                                                     self._caches[idx + 3],
+                                                     color='r',
+                                                     label='filtered')[0]
+
+        self._plots[6] = axes[3, 1].plot(self._xs, self._caches[6], color='k')[0]
+
+        self._plots[7] = ax_3d.plot([0, 1], [0, 0], [0, 0], color='r')[0]
+        self._plots[8] = ax_3d.plot([0, 0], [0, 1], [0, 0], color='g')[0]
+        self._plots[9] = ax_3d.plot([0, 0], [0, 0], [0, 1], color='b')[0]
 
         _ = animation.FuncAnimation(fig=fig,
                                     func=self._animate,
