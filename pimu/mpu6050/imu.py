@@ -16,8 +16,8 @@ Note:
 """
 import logging
 
-import pimu.constants as const
-import pimu.registers as regs
+import pimu.mpu6050.constants as const
+import pimu.mpu6050.registers as regs
 
 logger = logging.getLogger(__name__)
 
