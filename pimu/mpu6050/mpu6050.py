@@ -5,13 +5,16 @@ import pimu.mpu6050.constants as const
 import pimu.mpu6050.initialization as init
 import pimu.mpu6050.registers as regs
 import pimu.mpu6050.sensor as sensor
+from pimu.imu import Imu
 
 _logger = logging.getLogger(__name__)
 
 
-class MPU6050:
+class MPU6050(Imu):
 
     def __init__(self, gyro_sensitivity, acc_sensitivity, rate_hz):
+        super().__init__()
+
         self._gyro_sensitivity = const.GYRO_SENSITIVITY[gyro_sensitivity]
         self._acc_sensitivity = const.ACCEL_SENSITIVITY[acc_sensitivity]
         self._rate_hz = rate_hz
@@ -32,15 +35,6 @@ class MPU6050:
         _logger.debug('Gyroscope sensitivity {} deg/s'.format(gyro_sensitivity))
         _logger.debug('Accelerometer sensitivity: {}'.format(acc_sensitivity))
         _logger.debug('Rate: {} Hz'.format(self._rate_hz))
-
-        # Bias that can be removed through calibration.
-        self._acc_x_bias = 0
-        self._acc_y_bias = 0
-        self._acc_z_bias = 0
-
-        self._gyro_x_bias = 0
-        self._gyro_y_bias = 0
-        self._gyro_z_bias = 0
 
     def read_next(self):
         accelerometer_data = \
