@@ -14,7 +14,6 @@ Note:
     to follow the opposite convention. That's why we negate all the values
     before returning them.
 """
-import pimu.mpu6050.constants as const
 import pimu.mpu6050.registers as regs
 
 
@@ -51,12 +50,11 @@ def _read_raw_accelerometer_data(bus, device_address):
     return raw_data
 
 
-def read_accelerometer_data(bus, device_address, afs_sel):
+def read_accelerometer_data(bus, device_address, sensitivity):
     """Returns a tuple with the accelerometer readings along the X, Y and Z
     axes, in g units (e.g. a reading of 1 means 9.81 m/s/s along a certain
     axis).
     """
-    sensitivity = const.ACCEL_SENSITIVITY[afs_sel]
     data = tuple(map(lambda x: - x / sensitivity,
                      _read_raw_accelerometer_data(bus, device_address)))
     return data
@@ -89,11 +87,10 @@ def _read_raw_gyroscope_data(bus, device_address):
     return raw_data
 
 
-def read_gyroscope_data(bus, device_address, fs_sel):
+def read_gyroscope_data(bus, device_address, sensitivity):
     """Returns a tuple with the gyroscope readings around the X, Y and Z
     axes, in degrees / second.
     """
-    sensitivity = const.GYRO_SENSITIVITY[fs_sel]
     data = tuple(map(lambda x: x / sensitivity,
                      _read_raw_gyroscope_data(bus, device_address)))
     return data
