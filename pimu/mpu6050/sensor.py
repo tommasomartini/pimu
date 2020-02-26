@@ -14,12 +14,8 @@ Note:
     to follow the opposite convention. That's why we negate all the values
     before returning them.
 """
-import logging
-
 import pimu.mpu6050.constants as const
 import pimu.mpu6050.registers as regs
-
-_logger = logging.getLogger(__name__)
 
 
 def _complement2_to_signed(value):
