@@ -45,6 +45,7 @@ GYRO_SENSITIVITY = {
 }
 
 # Dimensions of the IMU board.
+# From: www.robotstore.it/Modulo-GY-521-MPU-6050
 BOARD_WIDTH_mm = 16.4   # along X axis
 BOARD_LENGTH_mm = 21.2  # along Y axis
 BOARD_HEIGHT_mm = 3.3   # along Z axis
