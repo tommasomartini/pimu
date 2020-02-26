@@ -3,15 +3,13 @@
 See:
     https://43zrtwysvxb2gf29r5o0athu-wpengine.netdna-ssl.com/wp-content/uploads/2015/02/MPU-6000-Register-Map1.pdf
 """
-import pimu.mpu6050.constants as const
 import pimu.mpu6050.registers as regs
 
 
-def initialize(bus, device_address, config):
-
-    # Extracts the parameters from the config dict.
-    fs_sel = const.FS_SEL[config['fs_sel']]
-    afs_sel = const.AFS_SEL[config['afs_sel']]
+def initialize(bus,
+               device_address,
+               gyro_full_scale_range,
+               acc_full_scale_range):
 
     # Sample Rate Divider.
     # Specifies the divider from the gyroscope output rate used to generate
@@ -58,7 +56,7 @@ def initialize(bus, device_address, config):
     # Bits 3-4 set FS_SEL, which selects the full scale range of the gyroscope
     # outputs. The full scale range is the maximum angular velocity that the
     # gyro can read. FS_SEL = 3 sets +-2000 degree/s.
-    bus.write_byte_data(device_address, regs.GYRO_CONFIG, fs_sel)
+    bus.write_byte_data(device_address, regs.GYRO_CONFIG, gyro_full_scale_range)
 
     # Accelerometer Configuration.
     # This register is used to trigger accelerometer self test and configure
@@ -66,7 +64,7 @@ def initialize(bus, device_address, config):
     # the Digital High Pass Filter (DHPF)
     # Bits 3-4 set AFS_SEL, which selects the full scale range of
     # the accelerometer outputs. AFS_SEL = 0 sets +-2g.
-    bus.write_byte_data(device_address, regs.ACCEL_CONFIG, afs_sel)
+    bus.write_byte_data(device_address, regs.ACCEL_CONFIG, acc_full_scale_range)
 
     # Interrupt Enable.
     # This register enables interrupt generation by interrupt sources.
