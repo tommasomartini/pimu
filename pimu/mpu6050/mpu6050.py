@@ -12,12 +12,11 @@ _logger = logging.getLogger(__name__)
 
 class MPU6050(Imu):
 
-    def __init__(self, gyro_sensitivity, acc_sensitivity, rate_hz):
+    def __init__(self, gyro_sensitivity, acc_sensitivity):
         super().__init__()
 
         self._gyro_sensitivity = const.GYRO_SENSITIVITY[gyro_sensitivity]
         self._acc_sensitivity = const.ACCEL_SENSITIVITY[acc_sensitivity]
-        self._rate_hz = rate_hz
 
         # The argument is 0 for older versions of the board.
         self._bus = smbus.SMBus(1)
@@ -34,7 +33,6 @@ class MPU6050(Imu):
 
         _logger.debug('Gyroscope sensitivity {} deg/s'.format(gyro_sensitivity))
         _logger.debug('Accelerometer sensitivity: {}'.format(acc_sensitivity))
-        _logger.debug('Rate: {} Hz'.format(self._rate_hz))
 
     def read_next(self):
         accelerometer_data = \
