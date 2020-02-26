@@ -1,15 +1,13 @@
 """This module contains the functions necessary to set up the MPU6050 IMU.
-"""
-import logging
 
+See:
+    https://43zrtwysvxb2gf29r5o0athu-wpengine.netdna-ssl.com/wp-content/uploads/2015/02/MPU-6000-Register-Map1.pdf
+"""
 import pimu.mpu6050.constants as const
 import pimu.mpu6050.registers as regs
 
-logger = logging.getLogger(__name__)
 
-
-def mpu_init(bus, device_address, config):
-    logger.info('Starting IMU setup')
+def initialize(bus, device_address, config):
 
     # Extracts the parameters from the config dict.
     fs_sel = const.FS_SEL[config['fs_sel']]
@@ -79,5 +77,3 @@ def mpu_init(bus, device_address, config):
     # bit 1 of register INT_STATUS (3A) to 1. Such bit is set back to 0 after
     # a read operation.
     bus.write_byte_data(device_address, regs.INT_ENABLE, 1)
-
-    logger.info('IMU setup complete')
