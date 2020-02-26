@@ -1,4 +1,4 @@
-"""This module contains functions to read data from a GY-521 MPU-5060 IMU.
+"""This module contains functions to read data from a GY-521 MPU-6050 IMU.
 
 Coordinate system:
 * X axis: along the short side of the board, pointing from the side with
@@ -9,17 +9,17 @@ Coordinate system:
 * Z axis: found by cross-product between X and Y axes.
 
 Note:
-    What above described seems to be the reference system drawn on the top face
+    What above described is the reference system drawn on the top face
     of the board, but the actual values read from the accelerometer seem
     to follow the opposite convention. That's why we negate all the values
-    between returning them.
+    before returning them.
 """
 import logging
 
 import pimu.mpu6050.constants as const
 import pimu.mpu6050.registers as regs
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _complement2_to_signed(value):
