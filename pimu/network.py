@@ -2,7 +2,7 @@ import logging
 import socket
 
 
-_logger = logging.getLogger()
+_logger = logging.getLogger(__name__)
 
 
 class _UDPSocket:
