@@ -12,7 +12,7 @@ class MPU6050Server(UDPServer):
         self._rate_hz = rate_hz
         self._mpu6050 = MPU6050(**kwargs)
 
-    def send_yaw_pitch_roll(self):
+    def run(self):
         while True:
             yaw_rad, pitch_rad, roll_rad, temperature_deg = \
                 self._mpu6050.read_yaw_pitch_roll()
