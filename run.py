@@ -12,6 +12,10 @@ _CALIBRATE = False
 _GYRO_FULL_SCALE_RANGE = '250'
 _ACC_FULL_SCALE_RANGE = '2g'
 
+mpl_logger = logging.getLogger('matplotlib')
+mpl_logger.setLevel(logging.WARNING)
+logging.basicConfig(level=_LOGGING_LEVEL,
+                    format='[%(levelname)s][%(name)s] %(message)s')
 _logger = logging.getLogger(__name__)
 
 
@@ -99,6 +103,4 @@ def _main():
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=_LOGGING_LEVEL,
-                        format='[%(levelname)s] %(message)s')
     _main()
