@@ -32,7 +32,7 @@ class Imu:
                                   'to implement this function')
 
     def read_yaw_pitch_roll(self):
-        acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, *_ = self.read_next()
+        acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, *other = self.read_next()
         curr_time_ms = int(round(time.time() * 1000))
         delta_time_ms = curr_time_ms - self._prev_time_ms
         self._prev_time_ms = curr_time_ms
@@ -48,7 +48,8 @@ class Imu:
         self._pitch = 0.5 * acc_pitch + 0.5 * (self._pitch + gyro_pitch_delta)
         self._roll = 0.5 * acc_roll + 0.5 * (self._roll + gyro_roll_delta)
 
-        return self._yaw, self._pitch, self._roll
+        output = self._yaw, self._pitch, self._roll, *other
+        return output
 
     def calibrate(self):
         input('Place the IMU on a flat surface and press '
