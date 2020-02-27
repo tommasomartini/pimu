@@ -1,114 +1,100 @@
+import argparse
 import json
 import logging
-import smbus
-import socket
-import time
-from time import sleep
 
-import pimu.calibration as calib
-import pimu.imu as pimu
-import pimu.init as init
-import pimu.registers as regs
+import pimu.debug.visual as vizdbg
+import pimu.imu_server as imu_server
+import pimu.network as net
 
-RATE = 2    # Hz
-LOGGING_LEVEL = logging.WARNING
-FS_SEL = '250'
-AFS_SEL = '2g'
-CALIBRATE = False
-NUM_CALIBRATION_SAMPLES = 5 * RATE  # calibration should take 5s
+_DEFAULT_RATE_hz = 10
+_LOGGING_LEVEL = logging.WARNING
+_CALIBRATE = False
+_GYRO_FULL_SCALE_RANGE = '250'
+_ACC_FULL_SCALE_RANGE = '2g'
 
-logging.basicConfig(level=LOGGING_LEVEL, format='[%(levelname)s] %(message)s')
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
-def _log_accelerometer(x, y, z):
-    value_format = '{: 6.3f}'
-    values_format = ', '.join([value_format] * 3)
-    unformatted_string = 'Accelerometer: ' + values_format
-    formatted_string = unformatted_string.format(x, y, z)
-    logger.info(formatted_string)
+def _client_to_visual_debugger(client):
+    def func():
+        for data in client.receive():
+            yaw_rad, pitch_rad, roll_rad, temperature_deg = json.loads(data)
+            yield yaw_rad, pitch_rad, roll_rad, \
+                  0, 0, 0, \
+                  temperature_deg
+    return func
 
 
-def _log_temperature(val):
-    logger.info('Temperature: {: 6.3f}'.format(val))
+def _run_imu_server(ip,
+                    port,
+                    rate_hz,
+                    gyro_fsr,
+                    acc_fsr):
+    _logger.info('Starting IMU server')
+
+    server = imu_server.MPU6050Server(ip=ip,
+                                      port=port,
+                                      rate_hz=rate_hz,
+                                      gyro_sensitivity=gyro_fsr,
+                                      acc_sensitivity=acc_fsr)
+    server.run()
 
 
-def _log_gyroscope(x, y, z):
-    value_format = '{: 7.3f}'
-    values_format = ', '.join([value_format] * 3)
-    unformatted_string = 'Gyroscope: ' + values_format
-    formatted_string = unformatted_string.format(x, y, z)
-    logger.info(formatted_string)
+def _run_imu_client(ip, port, rate_hz):
+    _logger.info('Starting IMU client')
+
+    client = net.UDPClient(ip, port)
+    debugger = vizdbg.VisualDebugger(rate=rate_hz)
+    debugger.run(updating_func=_client_to_visual_debugger(client))
 
 
-def main():
-    logger.info('Start up')
+def _main():
+    parser = argparse.ArgumentParser(description='IMU testing app.')
+    parser.add_argument('--server', '-s',
+                        action='store_true',
+                        dest='is_server',
+                        help='Starts an IMU server.'
+                             'Raises if --client is also set.')
+    parser.add_argument('--client', '-c',
+                        action='store_true',
+                        dest='is_client',
+                        help='Starts an IMU client.'
+                             'Raises if --server is also set.')
+    parser.add_argument('--ip',
+                        required=True,
+                        type=str,
+                        help='IP address of the client to send to (if server) '
+                             'or IP address of the server to listen to (if'
+                             'client).')
+    parser.add_argument('--port',
+                        required=True,
+                        type=int,
+                        help='Port of the UDP communication.')
+    parser.add_argument('--rate',
+                        required=True,
+                        type=float,
+                        help='IMU reading rate, in Hertz.')
 
-    UDP_IP = '192.168.1.128'
-    UDP_PORT = 5005
+    args = parser.parse_args()
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    is_server = args.is_server
+    is_client = args.is_client
+    if is_server == is_client:
+        raise ValueError('Either --server or --client must be set.')
 
-    # The argument is 0 for older version boards.
-    bus = smbus.SMBus(1)
-
-    device_address = regs.MPU6050_ADDRESS
-
-    config = {
-        'fs_sel': FS_SEL,
-        'afs_sel': AFS_SEL,
-    }
-    init.mpu_init(bus, device_address, config)
-
-    if CALIBRATE:
-        calib_values = calib.calibrate(
-            bus=bus,
-            device_address=device_address,
-            num_calibration_samples=NUM_CALIBRATION_SAMPLES,
-            afs_sel=AFS_SEL,
-            fs_sel=FS_SEL,
-        )
-        (err_acc_x, err_acc_y, err_acc_z,
-         err_gyro_x, err_gyro_y, err_gyro_z) = calib_values
-
-    sleep_time = 1. / RATE
-    logger.info('Begin data reading')
-    while True:
-        acc_x, acc_y, acc_z = \
-            pimu.read_accelerometer_data(bus, device_address, afs_sel=AFS_SEL)
-        temp_deg = pimu.read_temperature_data(bus, device_address)
-        gyro_x, gyro_y, gyro_z = \
-            pimu.read_gyroscope_data(bus, device_address, fs_sel=FS_SEL)
-
-        if CALIBRATE:
-            acc_x -= err_acc_x
-            acc_y -= err_acc_y
-            acc_z -= (err_acc_z + 1)
-
-            gyro_x -= err_gyro_x
-            gyro_y -= err_gyro_y
-            gyro_z -= err_gyro_z
-
-        msg = json.dumps({
-            'acc_x': acc_x,
-            'acc_y': acc_y,
-            'acc_z': acc_z,
-            'gyro_x': gyro_x,
-            'gyro_y': gyro_y,
-            'gyro_z': gyro_z,
-            'temp': temp_deg,
-            'timestamp_ms': int(round(time.time() * 1000)),
-        })
-        sock.sendto(bytes(msg, 'utf-8'), (UDP_IP, UDP_PORT))
-
-        _log_accelerometer(acc_x, acc_y, acc_z)
-        _log_temperature(temp_deg)
-        _log_gyroscope(gyro_x, gyro_y, gyro_z)
-
-        logger.info('')
-
-        sleep(sleep_time)
+    if is_server:
+        _run_imu_server(ip=args.ip,
+                        port=args.port,
+                        rate_hz=args.rate,
+                        gyro_fsr=_GYRO_FULL_SCALE_RANGE,
+                        acc_fsr=_ACC_FULL_SCALE_RANGE)
+    else:
+        _run_imu_client(ip=args.ip,
+                        port=args.port,
+                        rate_hz=args.rate)
 
 
 if __name__ == '__main__':
-    main()
+    logging.basicConfig(level=_LOGGING_LEVEL,
+                        format='[%(levelname)s] %(message)s')
+    _main()
