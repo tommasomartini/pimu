@@ -29,6 +29,7 @@ def _client_to_visual_debugger(client):
 def _run_imu_server(ip,
                     port,
                     rate_hz,
+                    calibrate,
                     gyro_fsr,
                     acc_fsr):
     _logger.info('Starting IMU server')
@@ -36,6 +37,7 @@ def _run_imu_server(ip,
     server = imu_server.MPU6050Server(ip=ip,
                                       port=port,
                                       rate_hz=rate_hz,
+                                      calibrate=calibrate,
                                       gyro_sensitivity=gyro_fsr,
                                       acc_sensitivity=acc_fsr)
     server.run()
@@ -87,6 +89,7 @@ def _main():
         _run_imu_server(ip=args.ip,
                         port=args.port,
                         rate_hz=args.rate,
+                        calibrate=_CALIBRATE,
                         gyro_fsr=_GYRO_FULL_SCALE_RANGE,
                         acc_fsr=_ACC_FULL_SCALE_RANGE)
     else:

@@ -7,10 +7,12 @@ from pimu.network import UDPServer
 
 class MPU6050Server(UDPServer):
 
-    def __init__(self, ip, port, rate_hz, **kwargs):
+    def __init__(self, ip, port, rate_hz, calibrate, **kwargs):
         super().__init__(ip, port)
         self._rate_hz = rate_hz
         self._mpu6050 = MPU6050(**kwargs)
+        if calibrate:
+            self._mpu6050.calibrate()
 
     def run(self):
         while True:
