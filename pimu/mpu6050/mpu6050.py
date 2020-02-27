@@ -3,8 +3,8 @@ import smbus
 
 import pimu.mpu6050.constants as const
 import pimu.mpu6050.initialization as init
-import pimu.mpu6050.registers as regs
 import pimu.mpu6050.interface as interface
+import pimu.mpu6050.registers as regs
 import pimu.mpu6050.sensor as sensor
 from pimu.imu import Imu
 
