@@ -4,6 +4,7 @@ import smbus
 import pimu.mpu6050.constants as const
 import pimu.mpu6050.initialization as init
 import pimu.mpu6050.registers as regs
+import pimu.mpu6050.interface as interface
 import pimu.mpu6050.sensor as sensor
 from pimu.imu import Imu
 
@@ -49,12 +50,14 @@ class MPU6050(Imu):
                                        device_address=self._device_address,
                                        sensitivity=self._gyro_sensitivity)
 
-        acc_x, acc_y, acc_z = accelerometer_data
+        acc_x, acc_y, acc_z = \
+            interface.accelerometer_data_to_board_system(*accelerometer_data)
         acc_x -= self._acc_x_bias
         acc_y -= self._acc_y_bias
         acc_z -= (self._acc_z_bias + 1)
 
-        gyro_x, gyro_y, gyro_z = gyroscope_data
+        gyro_x, gyro_y, gyro_z = \
+            interface.gyroscope_data_to_board_system(*gyroscope_data)
         gyro_x -= self._gyro_x_bias
         gyro_y -= self._gyro_y_bias
         gyro_z -= self._gyro_z_bias
