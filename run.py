@@ -18,7 +18,8 @@ _logger = logging.getLogger(__name__)
 def _client_to_visual_debugger(client):
     def func():
         for data in client.receive():
-            yaw_rad, pitch_rad, roll_rad, temperature_deg = json.loads(data)
+            yaw_rad, pitch_rad, roll_rad, temperature_deg = \
+                map(float, json.loads(data))
             yield yaw_rad, pitch_rad, roll_rad, \
                   0, 0, 0, \
                   temperature_deg
