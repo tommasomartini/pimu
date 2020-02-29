@@ -7,8 +7,8 @@ import pimu.imu_server as imu_server
 import pimu.network as net
 
 _DEFAULT_RATE_hz = 10
-_LOGGING_LEVEL = logging.WARNING
-_CALIBRATE = False
+_LOGGING_LEVEL = logging.DEBUG
+_CALIBRATE = True
 _GYRO_FULL_SCALE_RANGE = '250'
 _ACC_FULL_SCALE_RANGE = '2g'
 
