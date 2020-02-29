@@ -44,11 +44,14 @@ class Imu:
             sb.gyroscope_data_to_taitbryan_deltas(gyro_x, gyro_y, gyro_z,
                                                   delta_time_ms=delta_time_ms)
 
-        self._yaw_rad += gyro_yaw_delta_rad
-        self._pitch_rad = 0.8 * acc_pitch_rad + \
-                          0.2 * (self._pitch_rad + gyro_pitch_delta_rad)
-        self._roll_rad = 0.8 * acc_roll_rad + \
-                         0.2 * (self._roll_rad + gyro_roll_delta_rad)
+        # self._yaw_rad += gyro_yaw_delta_rad
+        # self._pitch_rad = 0.8 * acc_pitch_rad + \
+        #                   0.2 * (self._pitch_rad + gyro_pitch_delta_rad)
+        # self._roll_rad = 0.8 * acc_roll_rad + \
+        #                  0.2 * (self._roll_rad + gyro_roll_delta_rad)
+
+        self._pitch_rad = acc_pitch_rad
+        self._roll_rad = acc_roll_rad
 
         output = self._yaw_rad, self._pitch_rad, self._roll_rad, *other
         return output
