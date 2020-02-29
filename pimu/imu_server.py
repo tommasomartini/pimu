@@ -24,9 +24,9 @@ class MPU6050Server(UDPServer):
             yaw_rad, pitch_rad, roll_rad, temperature_deg = \
                 self._mpu6050.read_yaw_pitch_roll()
 
-            _logger.debug('yaw={:> 6.2f}°, '
-                          'pitch={:> 6.2f}°, '
-                          'roll={:> 6.2f}°, '
+            _logger.debug('yaw={:> 6.1f}°, '
+                          'pitch={:> 6.1f}°, '
+                          'roll={:> 6.1f}°, '
                           'temp={:> 5.1f}°C'.format(np.rad2deg(yaw_rad),
                                                     np.rad2deg(pitch_rad),
                                                     np.rad2deg(roll_rad),
