@@ -2,8 +2,8 @@ import numpy as np
 
 
 def gyroscope_data_to_taitbryan_deltas(gyro_x, gyro_y, gyro_z, delta_time_ms):
-    """Returns a delta for yaw, pitch and roll from the gyroscope data, since
-    the last measurement.
+    """Returns a delta for yaw, pitch and roll in radians from the gyroscope
+    data, since the last measurement.
 
     In this function the system in use is aligned with the sensor board as
     follows:
@@ -25,10 +25,10 @@ def gyroscope_data_to_taitbryan_deltas(gyro_x, gyro_y, gyro_z, delta_time_ms):
         A tuple (yaw, pitch, roll) in radians, describing the rotation of the
         board that occurred in the last given time interval.
     """
-    delta_yaw = np.deg2rad(gyro_z) * delta_time_ms / 1000
-    delta_pitch = np.deg2rad(gyro_y) * delta_time_ms / 1000
-    delta_roll = np.deg2rad(gyro_x) * delta_time_ms / 1000
-    return delta_yaw, delta_pitch, delta_roll
+    delta_yaw_rad = np.deg2rad(gyro_z) * delta_time_ms / 1000
+    delta_pitch_rad = np.deg2rad(gyro_y) * delta_time_ms / 1000
+    delta_roll_rad = np.deg2rad(gyro_x) * delta_time_ms / 1000
+    return delta_yaw_rad, delta_pitch_rad, delta_roll_rad
 
 
 def pitch_and_roll_from_accelerometer_data(acc_x, acc_y, acc_z):
@@ -63,6 +63,6 @@ def pitch_and_roll_from_accelerometer_data(acc_x, acc_y, acc_z):
     acc_vector = np.array([acc_x, acc_y, acc_z])
     gravity = acc_vector / np.linalg.norm(acc_vector)
     gx, gy, gz = gravity
-    pitch = np.arctan2(-gx, np.sqrt(gy ** 2 + gz ** 2))
-    roll = np.arctan2(gy, gz)
-    return pitch, roll
+    pitch_rad = np.arctan2(-gx, np.sqrt(gy ** 2 + gz ** 2))
+    roll_rad = np.arctan2(gy, gz)
+    return pitch_rad, roll_rad

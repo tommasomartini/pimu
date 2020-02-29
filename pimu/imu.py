@@ -14,9 +14,9 @@ class Imu:
     NUMBER_OF_CALIBRATION_SAMPLES = 1000
 
     def __init__(self):
-        self._yaw = 0
-        self._pitch = 0
-        self._roll = 0
+        self._yaw_rad = 0
+        self._pitch_rad = 0
+        self._roll_rad = 0
         self._prev_time_ms = int(round(time.time() * 1000))
 
         # Bias that can be removed through calibration.
@@ -37,18 +37,20 @@ class Imu:
         delta_time_ms = curr_time_ms - self._prev_time_ms
         self._prev_time_ms = curr_time_ms
 
-        acc_pitch, acc_roll = \
+        acc_pitch_rad, acc_roll_rad = \
             sb.pitch_and_roll_from_accelerometer_data(acc_x, acc_y, acc_z)
 
-        gyro_yaw_delta, gyro_pitch_delta, gyro_roll_delta = \
+        gyro_yaw_delta_rad, gyro_pitch_delta_rad, gyro_roll_delta_rad = \
             sb.gyroscope_data_to_taitbryan_deltas(gyro_x, gyro_y, gyro_z,
                                                   delta_time_ms=delta_time_ms)
 
-        self._yaw += gyro_yaw_delta
-        self._pitch = 0.5 * acc_pitch + 0.5 * (self._pitch + gyro_pitch_delta)
-        self._roll = 0.5 * acc_roll + 0.5 * (self._roll + gyro_roll_delta)
+        self._yaw_rad += gyro_yaw_delta_rad
+        self._pitch_rad = 0.8 * acc_pitch_rad + \
+                          0.2 * (self._pitch_rad + gyro_pitch_delta_rad)
+        self._roll_rad = 0.8 * acc_roll_rad + \
+                         0.2 * (self._roll_rad + gyro_roll_delta_rad)
 
-        output = self._yaw, self._pitch, self._roll, *other
+        output = self._yaw_rad, self._pitch_rad, self._roll_rad, *other
         return output
 
     def calibrate(self):
