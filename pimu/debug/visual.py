@@ -1,4 +1,4 @@
-import time
+import logging
 
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
@@ -8,16 +8,8 @@ from mpl_toolkits.mplot3d import Axes3D
 
 import pimu.geometry as geom
 
-_RATE_hz = 10
-
+_logger = logging.getLogger()
 sns.set()
-
-
-def generate_data():
-    for i in range(1000):
-        time.sleep(1 / _RATE_hz)
-        data = 2 * (np.random.rand(7) - 0.5) * 120
-        yield data
 
 
 class VisualDebugger:
@@ -31,15 +23,15 @@ class VisualDebugger:
     _NUM_SUBPLOTS_COLS = 2
 
     def __init__(self, rate):
-        self._num_samples = rate * self._SHOW_TIME_s
+        self._num_samples = int(round(rate * self._SHOW_TIME_s))
 
         # Zero-initialize all the plots.
         self._xs = list(range(self._num_samples))
         self._caches = [[0 for _ in range(self._num_samples)]
                         for _ in range(7)]
 
-        # Create the plot elements that will be updated.
-        self._plots = [
+        # Create the artist elements that will be updated.
+        self._artists = [
             None,   # yaw
             None,   # pitch
             None,   # roll
@@ -53,6 +45,8 @@ class VisualDebugger:
         ]
 
         self._init_board_axes = np.diag(np.ones(3))
+
+        _logger.debug('{} initialized'.format(self.__class__.__name__))
 
     def _format_axes(self, axes):
         ax_yaw, ax_pitch, ax_roll, ax_temp = axes
@@ -120,15 +114,44 @@ class VisualDebugger:
         return cache
 
     def _animate(self, values):
-        for idx, value in enumerate(values):
-            self._caches[idx] = self._update_cache(self._caches[idx], value)
-            self._plots[idx].set_ydata(self._caches[idx])
+        (yaw_rad, pitch_rad, roll_rad,
+         filtered_yaw_rad, filtered_pitch_rad, filtered_roll_rad,
+         temperature_deg) = values
 
-        (yaw, pitch, roll, filtered_yaw,
-         filtered_pitch, filtered_roll, _) = values
-        rotation_matrix = geom.build_rotation_matrix(yaw_rad=filtered_yaw,
-                                                     pitch_rad=filtered_pitch,
-                                                     roll_rad=filtered_roll)
+        (yaw_deg, pitch_deg, roll_deg,
+         filtered_yaw_deg, filtered_pitch_deg, filtered_roll_deg) = \
+            map(np.rad2deg,
+                (yaw_rad, pitch_rad, roll_rad,
+                 filtered_yaw_rad, filtered_pitch_rad, filtered_roll_rad))
+
+        _logger.debug('yaw={:> 6.1f}°, '
+                      'pitch={:> 6.1f}°, '
+                      'roll={:> 6.1f}°, '
+                      'temp={:> 5.1f}°C'.format(yaw_deg, pitch_deg, roll_deg,
+                                                temperature_deg))
+
+        self._caches[0] = self._update_cache(self._caches[0], yaw_deg)
+        self._caches[1] = self._update_cache(self._caches[1], pitch_deg)
+        self._caches[2] = self._update_cache(self._caches[2], roll_deg)
+        self._caches[3] = self._update_cache(self._caches[3],
+                                             filtered_yaw_deg)
+        self._caches[4] = self._update_cache(self._caches[4],
+                                             filtered_pitch_deg)
+        self._caches[5] = self._update_cache(self._caches[5],
+                                             filtered_roll_deg)
+        self._caches[6] = self._update_cache(self._caches[6], temperature_deg)
+
+        self._artists[0].set_ydata(self._caches[0])
+        self._artists[1].set_ydata(self._caches[1])
+        self._artists[2].set_ydata(self._caches[2])
+        self._artists[3].set_ydata(self._caches[3])
+        self._artists[4].set_ydata(self._caches[4])
+        self._artists[5].set_ydata(self._caches[5])
+        self._artists[6].set_ydata(self._caches[6])
+
+        rotation_matrix = geom.build_rotation_matrix(yaw_rad=yaw_rad,
+                                                     pitch_rad=pitch_rad,
+                                                     roll_rad=roll_rad)
         board_axes = rotation_matrix @ self._init_board_axes
 
         # Matrix of shape (3, 2, 3), representing 3 axis, each defined by two
@@ -140,16 +163,16 @@ class VisualDebugger:
         lines[:, :, [0, 1]] = lines[:, :, [1, 0]]
         lines[:, :, -1] *= -1
 
-        self._plots[7].set_data(lines[0, :, 0], lines[0, :, 1])
-        self._plots[7].set_3d_properties(lines[0, :, 2])
+        self._artists[7].set_data(lines[0, :, 0], lines[0, :, 1])
+        self._artists[7].set_3d_properties(lines[0, :, 2])
 
-        self._plots[8].set_data(lines[1, :, 0], lines[1, :, 1])
-        self._plots[8].set_3d_properties(lines[1, :, 2])
+        self._artists[8].set_data(lines[1, :, 0], lines[1, :, 1])
+        self._artists[8].set_3d_properties(lines[1, :, 2])
 
-        self._plots[9].set_data(lines[2, :, 0], lines[2, :, 1])
-        self._plots[9].set_3d_properties(lines[2, :, 2])
+        self._artists[9].set_data(lines[2, :, 0], lines[2, :, 1])
+        self._artists[9].set_3d_properties(lines[2, :, 2])
 
-        return self._plots
+        return self._artists
 
     def run(self, updating_func):
         fig, axes = plt.subplots(nrows=self._NUM_SUBPLOTS_ROWS,
@@ -163,22 +186,25 @@ class VisualDebugger:
         self._format_axes3d(ax_3d)
 
         for idx in range(3):
-            self._plots[idx] = axes[idx, 1].plot(self._xs,
-                                                 self._caches[idx],
-                                                 color='k',
-                                                 label='raw')[0]
+            self._artists[idx] = axes[idx, 1].plot(self._xs,
+                                                   self._caches[idx],
+                                                   color='k',
+                                                   label='raw')[0]
 
         for idx in range(3):
-            self._plots[idx + 3] = axes[idx, 1].plot(self._xs,
-                                                     self._caches[idx + 3],
-                                                     color='r',
-                                                     label='filtered')[0]
+            self._artists[idx + 3] = axes[idx, 1].plot(self._xs,
+                                                       self._caches[idx + 3],
+                                                       color='r',
+                                                       label='filtered')[0]
 
-        self._plots[6] = axes[3, 1].plot(self._xs, self._caches[6], color='k')[0]
+        self._artists[6] = \
+            axes[3, 1].plot(self._xs, self._caches[6], color='k')[0]
 
-        self._plots[7] = ax_3d.plot([0, 1], [0, 0], [0, 0], color='r')[0]
-        self._plots[8] = ax_3d.plot([0, 0], [0, 1], [0, 0], color='g')[0]
-        self._plots[9] = ax_3d.plot([0, 0], [0, 0], [0, 1], color='b')[0]
+        self._artists[7] = ax_3d.plot([0, 1], [0, 0], [0, 0], color='r')[0]
+        self._artists[8] = ax_3d.plot([0, 0], [0, 1], [0, 0], color='g')[0]
+        self._artists[9] = ax_3d.plot([0, 0], [0, 0], [0, 1], color='b')[0]
+
+        _logger.debug('{} ready to run'.format(self.__class__.__name__))
 
         _ = animation.FuncAnimation(fig=fig,
                                     func=self._animate,
@@ -186,11 +212,3 @@ class VisualDebugger:
                                     interval=1,
                                     blit=True)
         plt.show()
-
-
-def main():
-    VisualDebugger(rate=_RATE_hz).run(updating_func=generate_data)
-
-
-if __name__ == '__main__':
-    main()
