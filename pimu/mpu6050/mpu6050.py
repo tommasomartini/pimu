@@ -11,6 +11,11 @@ from pimu.imu import Imu
 _logger = logging.getLogger(__name__)
 
 
+def _log_values(values, values_label):
+    _logger.debug('{}: {}'.format(values_label, ', '.join(
+        '{:7.3f}'.format(v) for v in values)))
+
+
 class MPU6050(Imu):
 
     def __init__(self, gyro_sensitivity, acc_sensitivity):
@@ -40,26 +45,37 @@ class MPU6050(Imu):
             sensor.read_accelerometer_data(bus=self._bus,
                                            device_address=self._device_address,
                                            sensitivity=self._acc_sensitivity)
-
-        temperature_deg = \
-            sensor.read_temperature_data(bus=self._bus,
-                                         device_address=self._device_address)
+        # Pass to conventional coordinate system.
+        acc_x, acc_y, acc_z = \
+            interface.accelerometer_data_to_board_system(*accelerometer_data)
+        acc_x -= self._acc_x_bias
+        acc_y -= self._acc_y_bias
+        acc_z -= self._acc_z_bias
 
         gyroscope_data = \
             sensor.read_gyroscope_data(bus=self._bus,
                                        device_address=self._device_address,
                                        sensitivity=self._gyro_sensitivity)
-
-        acc_x, acc_y, acc_z = \
-            interface.accelerometer_data_to_board_system(*accelerometer_data)
-        acc_x -= self._acc_x_bias
-        acc_y -= self._acc_y_bias
-        acc_z -= (self._acc_z_bias + 1)
-
+        # Pass to conventional coordinate system.
         gyro_x, gyro_y, gyro_z = \
             interface.gyroscope_data_to_board_system(*gyroscope_data)
         gyro_x -= self._gyro_x_bias
         gyro_y -= self._gyro_y_bias
         gyro_z -= self._gyro_z_bias
+
+        temperature_deg = \
+            sensor.read_temperature_data(bus=self._bus,
+                                         device_address=self._device_address)
+
+        _log_values(values=accelerometer_data,
+                    values_label=' Accelerometer raw')
+        _log_values(values=(acc_x, acc_y, acc_z),
+                    values_label='Accelerometer proc')
+        _log_values(values=gyroscope_data,
+                    values_label=' Gyroscope raw')
+        _log_values(values=(gyro_x, gyro_y, gyro_z),
+                    values_label='Gyroscope proc')
+        _log_values(values=(temperature_deg,),
+                    values_label='Temperature raw')
 
         return acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, temperature_deg

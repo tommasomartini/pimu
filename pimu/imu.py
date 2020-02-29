@@ -71,9 +71,11 @@ class Imu:
                 np.array([acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z])
 
         calibration = np.mean(calibration_samples, axis=0)
+
+        # When calibrating we assume the board's Z axis is pointing to ground.
         self._acc_x_bias = calibration[0]
         self._acc_y_bias = calibration[1]
-        self._acc_z_bias = calibration[2]
+        self._acc_z_bias = calibration[2] - 1
 
         self._gyro_x_bias = calibration[3]
         self._gyro_y_bias = calibration[4]
